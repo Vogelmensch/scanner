@@ -5,8 +5,14 @@ class Scanner:
     def __init__(self, height, width, sensorData):
         self.height = height
         self.width = width
+
         # sensorData is an array of arrays, representing the input numbers
-        self.sensorData = sensorData 
+        sensorData = sensorData
+         # Load sensor data
+        self.sensorDataHorizontal = np.array(sensorData[0])
+        self.sensorDataDiagonalLR = np.array(sensorData[1])
+        self.sensorDataVertical = np.array(sensorData[2])
+        self.sensorDataDiagonalRL = np.array(sensorData[3]) 
 
         # represents the (solution) matrix. Start with a random assignment.
         self.matrix = np.random.choice([True, False], size=(height, width))
@@ -16,29 +22,32 @@ class Scanner:
 
     # evaluate assignment by comparing it to the actual sensorData
     # lower is better; 0 is perfect.
-    # TODO: currently only evals horizontals and verticals
     def evalAssignment(self, assignment):
         # count True elements in rows
         assignmentHorizontal = [np.count_nonzero(assignment[i,:]) for i in range(self.width)]
+
+        # count True elements in left-right-diagonals
+        diagsLR = [np.diagonal(np.fliplr(assignment), offset) for offset in range(-(self.width-1), self.height)]
+        diagsLR.reverse()
+        assignmentDiagonalLR = [np.count_nonzero(diag) for diag in diagsLR]
+
         # count True elements in cols
         assignmentVertical = [np.count_nonzero(assignment[:,i]) for i in range(self.height)]
-        # count True elements in left-right-diagonals
-        # TODO
+
         # count True elements in right-left-diagonals
-        diagRange = np.ceil(self.height/2)
-        diagsRL = [np.diagonal(assignment, offset) for offset in range(self.height-1, )] # <-------- TODO 
+        diagsRL = [np.diagonal(assignment, offset) for offset in range(-(self.width-1), self.height)]
         assignmentDiagonalRL = [np.count_nonzero(diag) for diag in diagsRL]
 
-        # TODO: indices may differ when adding diagonals
-        sensorDataHorizontal = self.sensorData[0]
-        sensorDataVertical = self.sensorData[1]
-        sensorDataDiagonalLR = self.sensorData[2]
-        sensorDataDiagonalRL = self.sensorData[3]
 
-        diffsHorizontal = np.sum(np.abs(assignmentHorizontal - sensorDataHorizontal))
-        diffsVertical = np.sum(np.abs(assignmentVertical - sensorDataVertical))
 
-        return diffsHorizontal + diffsVertical
+
+        # differences between sensor data and current assignment
+        diffsHorizontal = np.sum(np.abs(assignmentHorizontal - self.sensorDataHorizontal))
+        diffsVertical = np.sum(np.abs(assignmentVertical - self.sensorDataVertical))
+        diffsDiagonalLR = np.sum(np.abs(assignmentDiagonalLR - self.sensorDataDiagonalLR))
+        diffsDiagonalRL = np.sum(np.abs(assignmentDiagonalRL - self.sensorDataDiagonalRL))
+
+        return diffsHorizontal + diffsVertical + diffsDiagonalLR + diffsDiagonalRL
 
     # change every cell and evaluate the new state
     # return the evaluations in a matrix
@@ -79,11 +88,15 @@ class Scanner:
     def printMatrix(self):
         print(self.matrix)
 
-    
-sensorData = np.array([[2,1,0],[1,1,1]])
 
-for _ in range(2):
-    scanner = Scanner(3,3, sensorData)
+
+
+sensorData = [[2,1,0],[1,0,2,0,0],[1,1,1],[0,0,2,0,1]]
+
+for _ in range(1):
+    height = len(sensorData[0])
+    width = len(sensorData[2])
+    scanner = Scanner(height, width, sensorData)
     scanner.printMatrix()
     scanner.hillClimb()
     scanner.printMatrix()
