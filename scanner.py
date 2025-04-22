@@ -17,7 +17,7 @@ class Scanner:
         # represents the (solution) matrix. Start with a random assignment.
         self.matrix = np.random.choice([True, False], size=(height, width))
 
-        # starting evaluation is probably not good. We gotta start somewhere.
+        # starting-evaluation is probably not good. We gotta start somewhere.
         self.currentEval = np.inf
 
     # evaluate assignment by comparing it to the actual sensorData
@@ -46,6 +46,7 @@ class Scanner:
 
     # change every cell and evaluate the new state
     # return the evaluations in a matrix
+    # TODO: can be done more efficiently, I'm sure
     def assignAndEvaluate(self):
         height, width = self.matrix.shape
         evaluations = np.zeros((height, width))
@@ -89,12 +90,20 @@ class Scanner:
 
 
 
+def hillClimbRandomRestart(sensorData):
+    height = len(sensorData[0])
+    width = len(sensorData[2])
+    
+    eval = 1
+    while eval > 0:
+        scanner = Scanner(height, width, sensorData)
+        scanner.hillClimb()
+        eval = scanner.currentEval
+        print(eval)
+    print(scanner)
 
-sensorData = [[10, 10, 6, 4, 6, 8, 13, 15, 11, 6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,3,2,2,1,0],[2,4,5,5,7,6,7,10,10,10,7,3,3,5,5],[0,0,1,3,4,4,4,4,3,4,5,7,8,8,9,9,6,4,4,2,0,0,0,0]]
 
-height = len(sensorData[0])
-width = len(sensorData[2])
-scanner = Scanner(height, width, sensorData)
-print(scanner)
-scanner.hillClimb()
-print(scanner)
+# sensorData = [[10,10,6,4,6,8,13,15,11,6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,3,2,2,1,0],[2,4,5,5,7,6,7,10,10,10,7,3,3,5,5],[0,0,1,3,4,4,4,4,3,4,5,7,8,8,9,9,6,4,4,2,0,0,0,0]]
+sensorData = [[2,1,0],[1,0,2,0,0],[1,1,1],[0,0,2,0,1]]
+hillClimbRandomRestart(sensorData)
+
