@@ -79,19 +79,22 @@ class Scanner:
         while(self.changeMatrixFromEvaluation(eval)):
             eval = self.assignAndEvaluate()
 
-    # print matrix
-    def printMatrix(self):
-        print(self.matrix)
+    def __str__(self):
+        str = ""
+        for row in np.vectorize(lambda b: '#' if b else '.')(self.matrix):
+            for char in row:
+                print(char, end="")
+            print()
+        return str
 
 
 
 
-sensorData = [[2,1,0],[1,0,2,0,0],[1,1,1],[0,0,2,0,1]]
+sensorData = [[10, 10, 6, 4, 6, 8, 13, 15, 11, 6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,3,2,2,1,0],[2,4,5,5,7,6,7,10,10,10,7,3,3,5,5],[0,0,1,3,4,4,4,4,3,4,5,7,8,8,9,9,6,4,4,2,0,0,0,0]]
 
-for _ in range(1):
-    height = len(sensorData[0])
-    width = len(sensorData[2])
-    scanner = Scanner(height, width, sensorData)
-    scanner.printMatrix()
-    scanner.hillClimb()
-    scanner.printMatrix()
+height = len(sensorData[0])
+width = len(sensorData[2])
+scanner = Scanner(height, width, sensorData)
+print(scanner)
+scanner.hillClimb()
+print(scanner)
