@@ -24,22 +24,17 @@ class Scanner:
     # lower is better; 0 is perfect.
     def evalAssignment(self, assignment):
         # count True elements in rows
-        assignmentHorizontal = [np.count_nonzero(assignment[i,:]) for i in range(self.width)]
+        assignmentHorizontal = np.count_nonzero(assignment, axis=1)
 
         # count True elements in left-right-diagonals
-        diagsLR = [np.diagonal(np.fliplr(assignment), offset) for offset in range(-(self.width-1), self.height)]
-        diagsLR.reverse()
-        assignmentDiagonalLR = [np.count_nonzero(diag) for diag in diagsLR]
+        assignmentFlipped = np.fliplr(assignment)
+        assignmentDiagonalLR = [np.count_nonzero(np.diagonal(assignmentFlipped, offset)) for offset in range(self.height-1, -self.width, -1)]
 
         # count True elements in cols
-        assignmentVertical = [np.count_nonzero(assignment[:,i]) for i in range(self.height)]
+        assignmentVertical = np.count_nonzero(assignment, axis=0)
 
         # count True elements in right-left-diagonals
-        diagsRL = [np.diagonal(assignment, offset) for offset in range(-(self.width-1), self.height)]
-        assignmentDiagonalRL = [np.count_nonzero(diag) for diag in diagsRL]
-
-
-
+        assignmentDiagonalRL = [np.count_nonzero(np.diagonal(assignment, offset)) for offset in range(-(self.width-1), self.height)]
 
         # differences between sensor data and current assignment
         diffsHorizontal = np.sum(np.abs(assignmentHorizontal - self.sensorDataHorizontal))
