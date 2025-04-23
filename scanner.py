@@ -2,9 +2,9 @@ import numpy as np
 
 class Scanner:
     # initiates a scanner with a random matrix
-    def __init__(self, height, width, sensorData):
-        self.height = height
-        self.width = width
+    def __init__(self, sensorData):
+        self.height = len(sensorData[0])
+        self.width = len(sensorData[2])
 
         # sensorData is an array of arrays, representing the input numbers
         sensorData = sensorData
@@ -15,10 +15,13 @@ class Scanner:
         self.sensorDataDiagonalRL = np.array(sensorData[3]) 
 
         # represents the (solution) matrix. Start with a random assignment.
-        self.matrix = np.random.choice([True, False], size=(height, width))
+        self.matrix = np.random.choice([True, False], size=(self.height, self.width))
 
         # starting-evaluation is probably not good. We gotta start somewhere.
         self.currentEval = np.inf
+
+        # temperature for simulated annealing
+        self.tempCounter = 0
 
     # evaluate assignment by comparing it to the actual sensorData
     # lower is better; 0 is perfect.
@@ -80,6 +83,41 @@ class Scanner:
         while(self.changeMatrixFromEvaluation(eval)):
             eval = self.assignAndEvaluate()
 
+    # exponential temperature for simulated annealing
+    def temp(self, constant, tempCounter):
+        return constant / np.log(1 + tempCounter)
+
+    def annealingStep(self, probabilityConstant):
+        # 1. choose random neighbor of matrix (change one random element)
+        neighbor = self.matrix.copy()
+        randomIndex = (np.random.randint(self.height), np.random.randint(self.width))
+        neighbor[randomIndex] = not neighbor[randomIndex]
+
+        # 2. If neighbor is not worse, then go there!
+        eval = self.evalAssignment(neighbor)
+        if eval <= self.currentEval:
+            self.matrix = neighbor
+            self.currentEval = eval
+        # If neighbor is worse, go there with decreasing probability
+        else:
+            #temp = self.temp(190, self.tempCounter)
+            #probability = np.exp(- (eval - self.currentEval) / temp)
+            probability = np.exp(self.tempCounter / probabilityConstant * (self.currentEval - eval) / self.currentEval)
+            #print(probability)
+            if np.random.rand() < probability:
+                self.matrix = neighbor
+                self.currentEval = eval
+
+        # increment tempCounter -> decrease temperature
+        self.tempCounter += 1
+
+    def simulatedAnnealing(self, probabilityConstant, stopAfter = np.inf, activatePrint=False):
+        while self.currentEval > 0 and self.tempCounter < stopAfter:
+            if activatePrint:
+                print(self.currentEval)
+
+            self.annealingStep(probabilityConstant)
+
     def __str__(self):
         str = ""
         for row in np.vectorize(lambda b: '#' if b else '.')(self.matrix):
@@ -90,20 +128,26 @@ class Scanner:
 
 
 
-def hillClimbRandomRestart(sensorData):
-    height = len(sensorData[0])
-    width = len(sensorData[2])
-    
+def hillClimbRandomRestart(sensorData):    
     eval = 1
     while eval > 0:
-        scanner = Scanner(height, width, sensorData)
+        scanner = Scanner(sensorData)
         scanner.hillClimb()
         eval = scanner.currentEval
         print(eval)
     print(scanner)
 
 
-# sensorData = [[10,10,6,4,6,8,13,15,11,6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,3,2,2,1,0],[2,4,5,5,7,6,7,10,10,10,7,3,3,5,5],[0,0,1,3,4,4,4,4,3,4,5,7,8,8,9,9,6,4,4,2,0,0,0,0]]
-sensorData = [[2,1,0],[1,0,2,0,0],[1,1,1],[0,0,2,0,1]]
-hillClimbRandomRestart(sensorData)
+sensorData = [[10,10,6,4,6,8,13,15,11,6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,3,2,2,1,0],[2,4,5,5,7,6,7,10,10,10,7,3,3,5,5],[0,0,1,3,4,4,4,4,3,4,5,7,8,8,9,9,6,4,4,2,0,0,0,0]]
+# sensorData = [[2,1,0],[1,0,2,0,0],[1,1,1],[0,0,2,0,1]]
+# hillClimbRandomRestart(sensorData)
 
+
+results = {}
+for i in range(1, 25):
+    scanner = Scanner(sensorData)
+    scanner.simulatedAnnealing(probabilityConstant = i*30, stopAfter=10**6, activatePrint=False)
+    print(str(i*30) + " finished with " + str(scanner.currentEval))
+    results[i] = scanner.currentEval
+print(max(results))
+print(results[max(results)])
