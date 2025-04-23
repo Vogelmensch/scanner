@@ -20,8 +20,9 @@ class Scanner:
         # starting-evaluation is probably not good. We gotta start somewhere.
         self.currentEval = np.inf
 
-        # temperature for simulated annealing
-        self.tempCounter = 0
+        self.temp = 1
+
+        self.counter = 0
 
     # evaluate assignment by comparing it to the actual sensorData
     # lower is better; 0 is perfect.
@@ -83,10 +84,6 @@ class Scanner:
         while(self.changeMatrixFromEvaluation(eval)):
             eval = self.assignAndEvaluate()
 
-    # exponential temperature for simulated annealing
-    def temp(self, constant, tempCounter):
-        return constant / np.log(1 + tempCounter)
-
     def annealingStep(self, probabilityConstant):
         # 1. choose random neighbor of matrix (change one random element)
         neighbor = self.matrix.copy()
@@ -101,18 +98,29 @@ class Scanner:
         # If neighbor is worse, go there with decreasing probability
         else:
             #temp = self.temp(190, self.tempCounter)
-            #probability = np.exp(- (eval - self.currentEval) / temp)
-            probability = np.exp(self.tempCounter / probabilityConstant * (self.currentEval - eval) / self.currentEval)
-            #print(probability)
+            # probability = np.exp(- (eval - self.currentEval) / self.temp(10, self.tempCounter))
+            probability = np.exp((self.currentEval - eval) / self.temp)
+
+            # if self.counter % 1000 == 0: 
+            #     print(probability)
             if np.random.rand() < probability:
                 self.matrix = neighbor
                 self.currentEval = eval
 
-        # increment tempCounter -> decrease temperature
-        self.tempCounter += 1
+        # decrease temperature geometrically
+        self.temp = 0.999999 * self.temp
+
+        # print the matrix every 10.000 steps
+        if self.counter % 1000 == 0:
+            print(self)
+        
+        self.counter += 1
+
+        #print(self.temp)
+        
 
     def simulatedAnnealing(self, probabilityConstant, stopAfter = np.inf, activatePrint=False):
-        while self.currentEval > 0 and self.tempCounter < stopAfter:
+        while self.currentEval > 0 and self.counter < stopAfter:
             if activatePrint:
                 print(self.currentEval)
 
@@ -143,11 +151,16 @@ sensorData = [[10,10,6,4,6,8,13,15,11,6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,
 # hillClimbRandomRestart(sensorData)
 
 
-results = {}
-for i in range(1, 25):
-    scanner = Scanner(sensorData)
-    scanner.simulatedAnnealing(probabilityConstant = i*30, stopAfter=10**6, activatePrint=False)
-    print(str(i*30) + " finished with " + str(scanner.currentEval))
-    results[i] = scanner.currentEval
-print(max(results))
-print(results[max(results)])
+# results = {}
+# for i in range(1, 25):
+#     scanner = Scanner(sensorData)
+#     scanner.simulatedAnnealing(probabilityConstant = i*30, stopAfter=10**6, activatePrint=False)
+#     print(str(i*30) + " finished with " + str(scanner.currentEval))
+#     results[i] = scanner.currentEval
+# print(max(results))
+# print(results[max(results)])
+
+scanner = Scanner(sensorData)
+print(scanner)
+scanner.simulatedAnnealing(probabilityConstant=2000)
+print(scanner)
