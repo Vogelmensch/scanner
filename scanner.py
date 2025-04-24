@@ -42,17 +42,24 @@ class Scanner:
                 self.matrix[:, idx] = ScannerVariable(True, True)
         # lr-diagonal
         for idx, data in enumerate(self.sensor_data_diagonal_lr):
-            break
-            # TODO: AAAH WIE WÄHLE ICH DIE DIAGONALE AUS
-            smaller_dimension = self.height if self.height < self.width else self.width
-            idx_from = 0 if idx < smaller_dimension else idx
-            idx_to = idx+1 if idx < smaller_dimension else 0
+            idx_from_x = 0 if idx < self.height else idx-self.height+1
+            idx_from_y = 0 if idx < self.width else idx-self.width+1
+            idx_to_x = idx+1 if idx < self.width else self.width
+            idx_to_y = idx+1 if idx < self.height else self.height
             if data == 0:
-                print(idx)
-                np.fill_diagonal(np.fliplr(self.matrix[idx_from:idx_to, idx_from:idx_to]), ScannerVariable(False, True))
+                np.fill_diagonal(np.fliplr(self.matrix[idx_from_y:idx_to_y, idx_from_x:idx_to_x]), ScannerVariable(False, True))
             elif data == self.height + self.width - 1:
-                np.fill_diagonal(np.fliplr(self.matrix[idx_from:idx_to, idx_from:idx_to]), ScannerVariable(True, True))
-        
+                np.fill_diagonal(np.fliplr(self.matrix[idx_from_y:idx_to_y, idx_from_x:idx_to_x]), ScannerVariable(True, True))
+        # rl-diagonal
+        for idx, data in enumerate(self.sensor_data_diagonal_rl):
+            idx_from_x = 0 if idx < self.height else idx-self.height+1
+            idx_from_y = self.height-(idx+1) if idx < self.height else 0
+            idx_to_x = idx+1 if idx < self.width else self.width
+            idx_to_y = self.height if idx < self.width else self.height-(idx-self.width+1)
+            if data == 0:
+                np.fill_diagonal(self.matrix[idx_from_y:idx_to_y, idx_from_x:idx_to_x], ScannerVariable(False, True))
+            elif data == self.height + self.width - 1:
+                np.fill_diagonal(self.matrix[idx_from_y:idx_to_y, idx_from_x:idx_to_x], ScannerVariable(True, True))
 
         # starting-evaluation is probably not good. We gotta start somewhere.
         self.currentEval = np.inf
@@ -188,7 +195,6 @@ sensor_data = [[10,10,6,4,6,8,13,15,11,6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6
 
 scanner = Scanner(sensor_data)
 print(scanner)
-print(scanner.matrix[0,0].value)
 
 
 
