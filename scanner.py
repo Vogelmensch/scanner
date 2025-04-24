@@ -1,21 +1,58 @@
 import numpy as np
 
+class ScannerVariable:
+    def __init__(self, value = None, is_fixed=False):
+        self.value = value          # 0 -> unassigned. Otherwise: Boolean
+        self.is_fixed = is_fixed    # are we 100% certain about this variable?
+
+
+
 class Scanner:
     # initiates a scanner with a random matrix
-    def __init__(self, sensorData):
-        self.height = len(sensorData[0])
-        self.width = len(sensorData[2])
+    def __init__(self, sensor_data):
+        self.height = len(sensor_data[0])
+        self.width = len(sensor_data[2])
 
-        # sensorData is an array of arrays, representing the input numbers
-        sensorData = sensorData
+        # sensor_data is an array of arrays, representing the input numbers
+        sensor_data = sensor_data
          # Load sensor data
-        self.sensorDataHorizontal = np.array(sensorData[0])
-        self.sensorDataDiagonalLR = np.array(sensorData[1])
-        self.sensorDataVertical = np.array(sensorData[2])
-        self.sensorDataDiagonalRL = np.array(sensorData[3]) 
+        self.sensor_data_horizontal = np.array(sensor_data[0])
+        self.sensor_data_diagonal_lr = np.array(sensor_data[1])
+        self.sensor_data_vertical = np.array(sensor_data[2])
+        self.sensor_data_diagonal_rl = np.array(sensor_data[3]) 
 
-        # represents the (solution) matrix. Start with a random assignment.
-        self.matrix = np.random.choice([True, False], size=(self.height, self.width))
+        # represents the (solution) matrix.
+        self.matrix = np.empty((self.height, self.width), dtype=ScannerVariable)
+        for row in range(self.height):
+            for col in range(self.width):
+                self.matrix[row, col] = ScannerVariable()
+
+        # we can be certain about all the rows and columns which are either empty or full
+        # horizontals
+        for idx, data in enumerate(self.sensor_data_horizontal):
+            if data == 0:
+                self.matrix[idx, :] = ScannerVariable(False, True)
+            elif data == self.width:
+                self.matrix[idx, :] = ScannerVariable(True, True)
+        # verticals
+        for idx, data in enumerate(self.sensor_data_vertical):
+            if data == 0:
+                self.matrix[:, idx] = ScannerVariable(False, True)
+            elif data == self.height:
+                self.matrix[:, idx] = ScannerVariable(True, True)
+        # lr-diagonal
+        for idx, data in enumerate(self.sensor_data_diagonal_lr):
+            break
+            # TODO: AAAH WIE WÄHLE ICH DIE DIAGONALE AUS
+            smaller_dimension = self.height if self.height < self.width else self.width
+            idx_from = 0 if idx < smaller_dimension else idx
+            idx_to = idx+1 if idx < smaller_dimension else 0
+            if data == 0:
+                print(idx)
+                np.fill_diagonal(np.fliplr(self.matrix[idx_from:idx_to, idx_from:idx_to]), ScannerVariable(False, True))
+            elif data == self.height + self.width - 1:
+                np.fill_diagonal(np.fliplr(self.matrix[idx_from:idx_to, idx_from:idx_to]), ScannerVariable(True, True))
+        
 
         # starting-evaluation is probably not good. We gotta start somewhere.
         self.currentEval = np.inf
@@ -24,29 +61,29 @@ class Scanner:
 
         self.counter = 0
 
-    # evaluate assignment by comparing it to the actual sensorData
+    # evaluate assignment by comparing it to the actual sensor_data
     # lower is better; 0 is perfect.
-    def evalAssignment(self, assignment):
+    def eval_assignment(self, assignment):
         # count True elements in rows
-        assignmentHorizontal = np.count_nonzero(assignment, axis=1)
+        assignment_horizontal = np.count_nonzero(assignment, axis=1)
 
         # count True elements in left-right-diagonals
-        assignmentFlipped = np.fliplr(assignment)
-        assignmentDiagonalLR = [np.count_nonzero(np.diagonal(assignmentFlipped, offset)) for offset in range(self.height-1, -self.width, -1)]
+        assignment_flipped = np.fliplr(assignment)
+        assignment_diagonal_lr = [np.count_nonzero(np.diagonal(assignment_flipped, offset)) for offset in range(self.height-1, -self.width, -1)]
 
         # count True elements in cols
-        assignmentVertical = np.count_nonzero(assignment, axis=0)
+        assignment_vertical = np.count_nonzero(assignment, axis=0)
 
         # count True elements in right-left-diagonals
-        assignmentDiagonalRL = [np.count_nonzero(np.diagonal(assignment, offset)) for offset in range(-(self.width-1), self.height)]
+        assignment_diagonal_rl = [np.count_nonzero(np.diagonal(assignment, offset)) for offset in range(-(self.width-1), self.height)]
 
         # differences between sensor data and current assignment
-        diffsHorizontal = np.sum(np.abs(assignmentHorizontal - self.sensorDataHorizontal))
-        diffsVertical = np.sum(np.abs(assignmentVertical - self.sensorDataVertical))
-        diffsDiagonalLR = np.sum(np.abs(assignmentDiagonalLR - self.sensorDataDiagonalLR))
-        diffsDiagonalRL = np.sum(np.abs(assignmentDiagonalRL - self.sensorDataDiagonalRL))
+        diffs_horizontal = np.sum(np.abs(assignment_horizontal - self.sensor_data_horizontal))
+        diffs_vertical = np.sum(np.abs(assignment_vertical - self.sensor_data_vertical))
+        diffs_diagonal_lr = np.sum(np.abs(assignment_diagonal_lr - self.sensor_data_diagonal_lr))
+        diffs_diagonal_rl = np.sum(np.abs(assignment_diagonal_rl - self.sensor_data_diagonal_rl))
 
-        return diffsHorizontal + diffsVertical + diffsDiagonalLR + diffsDiagonalRL
+        return diffs_horizontal + diffs_vertical + diffs_diagonal_lr + diffs_diagonal_rl
 
     # change every cell and evaluate the new state
     # return the evaluations in a matrix
@@ -67,7 +104,7 @@ class Scanner:
     # change the element in self.matrix, whose correspondend element in the evaluation is the lowest
     # only do this if this element is lower than the current eval. 
     # return whether the change was successful
-    def changeMatrixFromEvaluation(self, eval):
+    def change_matrix_from_evaluation(self, eval):
         indexOfLowest = np.unravel_index(np.argmin(eval, axis=None), eval.shape)
         lowest = eval[indexOfLowest]
 
@@ -128,7 +165,7 @@ class Scanner:
 
     def __str__(self):
         str = ""
-        for row in np.vectorize(lambda b: '#' if b else '.')(self.matrix):
+        for row in np.vectorize(lambda b: ' ' if b.value == None else '#' if b.value else '.')(self.matrix):
             for char in row:
                 print(char, end="")
             print()
@@ -136,31 +173,46 @@ class Scanner:
 
 
 
-def hillClimbRandomRestart(sensorData):    
+def hillClimbRandomRestart(sensor_data):    
     eval = 1
     while eval > 0:
-        scanner = Scanner(sensorData)
+        scanner = Scanner(sensor_data)
         scanner.hillClimb()
         eval = scanner.currentEval
         print(eval)
     print(scanner)
 
 
-sensorData = [[10,10,6,4,6,8,13,15,11,6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,3,2,2,1,0],[2,4,5,5,7,6,7,10,10,10,7,3,3,5,5],[0,0,1,3,4,4,4,4,3,4,5,7,8,8,9,9,6,4,4,2,0,0,0,0]]
-# sensorData = [[2,1,0],[1,0,2,0,0],[1,1,1],[0,0,2,0,1]]
-# hillClimbRandomRestart(sensorData)
+sensor_data = [[10,10,6,4,6,8,13,15,11,6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,3,2,2,1,0],[2,4,5,5,7,6,7,10,10,10,7,3,3,5,5],[0,0,1,3,4,4,4,4,3,4,5,7,8,8,9,9,6,4,4,2,0,0,0,0]]
+# sensor_data = [[2,1,0],[1,0,2,0,0],[1,1,1],[0,0,2,0,1]]
+
+scanner = Scanner(sensor_data)
+print(scanner)
+print(scanner.matrix[0,0].value)
+
+
+
+
+
+
+
+
+
+
+
+# hillClimbRandomRestart(sensor_data)
 
 
 # results = {}
 # for i in range(1, 25):
-#     scanner = Scanner(sensorData)
+#     scanner = Scanner(sensor_data)
 #     scanner.simulatedAnnealing(probabilityConstant = i*30, stopAfter=10**6, activatePrint=False)
 #     print(str(i*30) + " finished with " + str(scanner.currentEval))
 #     results[i] = scanner.currentEval
 # print(max(results))
 # print(results[max(results)])
 
-scanner = Scanner(sensorData)
-print(scanner)
-scanner.simulatedAnnealing(probabilityConstant=2000)
-print(scanner)
+# scanner = Scanner(sensor_data)
+# print(scanner)
+# scanner.simulatedAnnealing(probabilityConstant=2000)
+# print(scanner)
