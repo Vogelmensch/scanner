@@ -69,13 +69,17 @@ class Scanner:
                     obj.assignment = Assignment.EMPTY
                 #self.update_sensor_data(obj.x, obj.y)
 
-    def fill_loop(self):
-        while(input() == ""):
-            print(self)
-            print(self.sensor_data_horizontal)
-            print(self.sensor_data_diagonal_lr)
-            print(self.sensor_data_vertical)
-            print(self.sensor_data_diagonal_rl)
+    # mode: "run" or "debug"
+    def fill_loop(self, mode="run"):
+        while(mode == "run" and not self.is_done() or mode == "debug" and input() == ""):
+
+            if mode == "debug":
+                print(self)
+                print(self.sensor_data_horizontal)
+                print(self.sensor_data_diagonal_lr)
+                print(self.sensor_data_vertical)
+                print(self.sensor_data_diagonal_rl)
+                
             diag_lr = [np.diagonal(np.fliplr(self.matrix), offset) for offset in range(self.width-1, 1-self.height-1, -1)]
             diag_rl = [np.diagonal(self.matrix, offset) for offset in range(1-self.height, self.width)]
             # Horizontals
@@ -91,6 +95,27 @@ class Scanner:
             for i in range(self.height + self.width - 1):
                 self.compare_and_fill(self.sensor_data_diagonal_rl[i], diag_rl[i])
         
+        # if one of the two conditions is not met, a solution has not been found.
+        if not (self.is_data_used() and self.is_all_assigned()):
+            self.matrix = self.create_empty()
+        
+    def is_data_used(self):
+        return not (np.any(self.sensor_data_horizontal != 0) or np.any(self.sensor_data_vertical != 0) or np.any(self.sensor_data_diagonal_lr != 0) or np.any(self.sensor_data_diagonal_rl != 0))
+
+    def is_all_assigned(self):
+        return not np.any(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
+    
+    def is_done(self):
+        return self.is_data_used() or self.is_all_assigned()
+    
+    def create_empty(self):
+        matrix = np.empty((self.height, self.width), dtype=ScannerObject)
+        for x in range(self.width):
+            for y in range(self.height):
+                matrix[y,x] = ScannerObject(x,y)
+                matrix[y,x].assignment = Assignment.EMPTY
+        
+        return matrix
 
     def __str__(self):
         str = ""
@@ -102,23 +127,12 @@ class Scanner:
 
 
 
-sensor_data = [[10,10,6,4,6,8,13,15,11,6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,3,2,2,1,0],[2,4,5,5,7,6,7,10,10,10,7,3,3,5,5],[0,0,1,3,4,4,4,4,3,4,5,7,8,8,9,9,6,4,4,2,0,0,0,0]]
-# sensor_data = [[3,2,2,2,1], [0,0,2,2,3,1,2,0,0], [0,2,4,3,1], [0,0,1,2,3,0,2,1,1]]
-# sensor_data = [[1],[1,0],[1,0],[1,0]]
-# sensor_data = [[1,0],[1,0],[1],[0,1]]
-# sensor_data = [[1,4,1],[0,0,2,1,2,1,0],[0,1,3,1,1],[0,0,2,1,2,1,0]]
-#sensor_data = [[2,1,0],[1,0,2,0,0],[1,1,1],[0,0,2,0,1]]
-# sensor_data = [[1,1],[1,0,1],[1,1],[0,2,0]]
-# sensor_data = [[1,0],[0,1,0],[0,1],[0,0,1]]
-
-scanner = Scanner(sensor_data)
-print(scanner)
-scanner.fill_loop()
-print(scanner)
 
 
+if __name__ == "__main__":
+    sensor_data = [[10,10,6,4,6,8,13,15,11,6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,3,2,2,1,0],[2,4,5,5,7,6,7,10,10,10,7,3,3,5,5],[0,0,1,3,4,4,4,4,3,4,5,7,8,8,9,9,6,4,4,2,0,0,0,0]]
+    # sensor_data = [[3,3,3],[0,0,0,0,0],[1,2,3],[0,1,2,3,2]] # nonsense data
 
-
-
-
-
+    scanner = Scanner(sensor_data)
+    scanner.fill_loop()
+    print(scanner)
