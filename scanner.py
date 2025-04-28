@@ -13,7 +13,6 @@ class ScannerObject:
         self.x = x
         self.y = y
 
-
 class Scanner:
     # initiates a scanner
     def __init__(self, sensor_data):
@@ -21,6 +20,7 @@ class Scanner:
         self.width = len(sensor_data[2])
 
         # Load sensor data
+        # Interpreting sensor data as "number of yet unassigned FULL-Values"
         self.sensor_data_horizontal = np.array(sensor_data[0])
         self.sensor_data_diagonal_lr = np.array(sensor_data[1])
         self.sensor_data_vertical = np.array(sensor_data[2])
@@ -40,19 +40,17 @@ class Scanner:
         self.sensor_data_vertical[x] = max(self.sensor_data_vertical[x] - 1, 0)
         self.sensor_data_diagonal_rl[self.height-1-y+x] = max(self.sensor_data_diagonal_rl[self.height-1-y+x] - 1, 0)
 
-
-    # if it's possible: fill the unassigned values of arr with either True of False, depending on the case
-    # sensor_data: int - the number of unassigned elements in arr that need to be True
-    # arr: array to look at 
-    # return updated sensor_data
+    # if it's possible: fill the unassigned values of arr with either FULL or EMPTY, depending on the case
+    # sensor_data_point: int - the number of unassigned elements in arr that need to be FULL
+    # arr: array to inspect
     def compare_and_fill(self, sensor_data_point, arr):
-        # number of empty elements (unassigned Falses and Trues!)
+        # number of unassigned elements
         n_of_unassigned = 0
         for obj in arr:
             if obj.assignment == Assignment.UNASSIGNED:
                 n_of_unassigned += 1
 
-        # nothing to do here
+        # if all elements are assigned, there is nothing to do here
         if n_of_unassigned == 0:
             return
 
@@ -68,12 +66,10 @@ class Scanner:
             for obj in arr:
                 if obj.assignment == Assignment.UNASSIGNED:
                     obj.assignment = Assignment.EMPTY
-                #self.update_sensor_data(obj.x, obj.y)
 
     # mode: "run" or "debug"
     def fill_loop(self, mode="run"):
-        while(mode == "run" and not self.is_done() or mode == "debug" and input() == ""):
-
+        while(mode == "run" and not self.is_done() or mode == "debug" and input() == "" and not self.is_done()):
             if mode == "debug":
                 print(self)
                 print(self.sensor_data_horizontal)
@@ -131,11 +127,33 @@ class Scanner:
 
 
 if __name__ == "__main__":
-    sensor_data = [[10,10,6,4,6,8,13,15,11,6],[0,1,2,2,2,2,4,5,5,6,7,6,5,6,6,5,5,6,6,3,2,2,1,0],[2,4,5,5,7,6,7,10,10,10,7,3,3,5,5],[0,0,1,3,4,4,4,4,3,4,5,7,8,8,9,9,6,4,4,2,0,0,0,0]]
-    # sensor_data = [[3,3,3],[0,0,0,0,0],[1,2,3],[0,1,2,3,2]] # nonsense data
+    if len(sys.argv) < 2:
+        print("Usage:\n\tpython scanner.py <input-file>\n")
+        print("Options:\n\t-d  use debug-mode")
+        sys.exit(1)
 
-    arg = "debug" if len(sys.argv) > 1 and sys.argv[1] == "-d" else "run"
+    file_path = sys.argv[1]
+    arg = "debug" if len(sys.argv) > 2 and sys.argv[2] == "-d" else "run"
 
-    scanner = Scanner(sensor_data)
-    scanner.fill_loop(arg)
-    print(scanner)
+
+    try:
+        f = open(file_path)
+    except FileNotFoundError:
+        print(f"File \"{file_path}\" not found.")
+        sys.exit(1)
+    else:
+        with f:
+            n_layers = int(f.readline())
+
+            for layer in range(n_layers):
+                sensor_data = []
+                for _ in range(4):
+                    next_line = f.readline().split(" ")
+                    sensor_data.append(list(map(int, next_line)))
+            
+                if arg == "debug":
+                    print(f"Layer {layer}:")
+
+                scanner = Scanner(sensor_data)
+                scanner.fill_loop(arg)
+                print(scanner)
