@@ -31,6 +31,10 @@ class Scanner:
         for x in range(self.width):
             for y in range(self.height):
                 self.matrix[y,x] = ScannerObject(x,y)
+        
+        # Tracks whether a change occured for each iteration
+        # -> catches unsolvable problems
+        self.changeOccured = True
 
     # update sensor data (number of unassigned Trues) of ALL arrays that a certain element is part of (always 4)
     # minimum is 0
@@ -60,16 +64,20 @@ class Scanner:
                 if obj.assignment == Assignment.UNASSIGNED:
                     obj.assignment = Assignment.FULL
                     self.update_sensor_data(obj.x, obj.y)
+                    self.changeOccured = True
 
         # Declare all unassigned as empty
         elif sensor_data_point == 0:
             for obj in arr:
                 if obj.assignment == Assignment.UNASSIGNED:
                     obj.assignment = Assignment.EMPTY
+                    self.changeOccured = True
 
     # mode: "run" or "debug"
     def fill_loop(self, mode="run"):
         while(mode == "run" and not self.is_done() or mode == "debug" and input() == "" and not self.is_done()):
+            self.changeOccured = False
+
             if mode == "debug":
                 print(self)
                 print(self.sensor_data_horizontal)
@@ -103,7 +111,7 @@ class Scanner:
         return not np.any(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
     
     def is_done(self):
-        return self.is_data_used() or self.is_all_assigned()
+        return self.is_data_used() or self.is_all_assigned() or not self.changeOccured
     
     def create_empty(self):
         matrix = np.empty((self.height, self.width), dtype=ScannerObject)
