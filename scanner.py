@@ -1,6 +1,7 @@
 import numpy as np
 from enum import Enum
 import sys
+from copy import deepcopy
 
 class Assignment(Enum):
     UNASSIGNED = 1
@@ -16,6 +17,8 @@ class ScannerObject:
 class Scanner:
     # initiates a scanner
     def __init__(self, sensor_data, termination_reasons):
+        self.sensor_data = sensor_data
+
         self.height = len(sensor_data[0])
         self.width = len(sensor_data[2])
 
@@ -34,7 +37,11 @@ class Scanner:
         
         # Tracks whether a change occured for each iteration
         # -> catches unsolvable problems
-        self.changeOccured = True
+        self.has_change_occured = True
+
+        self.solution_has_been_found = False
+        # solution we found through search
+        self.search_solution = np.empty((self.height, self.width), dtype=ScannerObject)
 
         # collects data about the reason why the program terminated
         self.termination_reasons = termination_reasons
@@ -67,19 +74,20 @@ class Scanner:
                 if obj.assignment == Assignment.UNASSIGNED:
                     obj.assignment = Assignment.FULL
                     self.update_sensor_data(obj.x, obj.y)
-                    self.changeOccured = True
+                    self.has_change_occured = True
 
         # Declare all unassigned as empty
         elif sensor_data_point == 0:
             for obj in arr:
                 if obj.assignment == Assignment.UNASSIGNED:
                     obj.assignment = Assignment.EMPTY
-                    self.changeOccured = True
+                    self.has_change_occured = True
 
     # mode: "run" or "debug"
+    # returns whether a valid solution has been found
     def fill_loop(self, mode="run"):
         while(mode == "run" and not self.is_done() or mode == "debug" and input() == "" and not self.is_done()):
-            self.changeOccured = False
+            self.has_change_occured = False
 
             if mode == "debug":
                 print(self)
@@ -102,11 +110,49 @@ class Scanner:
             # RL-Diags
             for i in range(self.height + self.width - 1):
                 self.compare_and_fill(self.sensor_data_diagonal_rl[i], diag_rl[i])
-        
-        # if one of the two conditions is not met, a solution has not been found.
-        if not (self.is_data_used() and self.is_all_assigned()):
+
+
+        # -- Now: What's the reason we left the loop? --
+
+        # TODO: think about this
+        if self.is_data_used():
+            self.termination_reasons["data used"] += 1
+            return True
+
+        # Fields may all be assigned, but there is data left 
+        # -> contradiction
+        if self.is_all_assigned():
+            self.termination_reasons["all assigned"] += 1
             self.matrix = self.create_empty()
+            return False
         
+        # We're stuck!
+        # -> perform local search: assign a variable and continue
+        if not self.has_change_occured:
+            # indices of unassigned fields
+            indices_of_unassigned = np.argwhere(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
+            for idx in indices_of_unassigned:
+                # recursive calls:
+                if self.search_in_branch(idx, mode, Assignment.EMPTY):
+                    if self.solution_has_been_found:
+                        return False
+                    self.solution_has_been_found = True
+                if self.search_in_branch(idx, mode, Assignment.FULL):
+                    if self.solution_has_been_found:
+                            return False
+                    self.solution_has_been_found = True
+            
+            return self.solution_has_been_found
+
+
+    def search_in_branch(self, idx, mode, value):
+        # Create new Scanner to keep state
+        branch_scanner = Scanner(self.sensor_data.copy(), {"data used": 0, "all assigned": 0, "no change": 0})
+        branch_scanner.matrix = deepcopy(self.matrix)
+        branch_scanner.matrix[tuple(idx)].assignment = value
+
+        return branch_scanner.fill_loop(mode)
+
     def is_data_used(self):
         return not (np.any(self.sensor_data_horizontal != 0) or np.any(self.sensor_data_vertical != 0) or np.any(self.sensor_data_diagonal_lr != 0) or np.any(self.sensor_data_diagonal_rl != 0))
 
@@ -116,12 +162,12 @@ class Scanner:
     # Check whether we're done
     # collect data about the reason
     def is_done(self):
-        is_done = self.is_data_used() or self.is_all_assigned() or not self.changeOccured
+        is_done = self.is_data_used() or self.is_all_assigned() or not self.has_change_occured
         if is_done and self.is_data_used():
             self.termination_reasons["data used"] += 1
         if is_done and self.is_all_assigned():
             self.termination_reasons["all assigned"] += 1
-        if is_done and not self.changeOccured:
+        if is_done and not self.has_change_occured:
             self.termination_reasons["no change"] += 1
         return is_done
     
@@ -133,6 +179,14 @@ class Scanner:
                 matrix[y,x].assignment = Assignment.EMPTY
         
         return matrix
+    
+    # assign one of the unassigned fields with the provided value
+    def assign_all(self, value):
+        # indices of unassigned fields
+        indices = np.argwhere(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
+        for idx in indices:
+            self.matrix[idx] = value
+        
 
     def __str__(self):
         str = ""
