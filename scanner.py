@@ -15,7 +15,7 @@ class ScannerObject:
 
 class Scanner:
     # initiates a scanner
-    def __init__(self, sensor_data):
+    def __init__(self, sensor_data, termination_reasons):
         self.height = len(sensor_data[0])
         self.width = len(sensor_data[2])
 
@@ -35,6 +35,9 @@ class Scanner:
         # Tracks whether a change occured for each iteration
         # -> catches unsolvable problems
         self.changeOccured = True
+
+        # collects data about the reason why the program terminated
+        self.termination_reasons = termination_reasons
 
     # update sensor data (number of unassigned Trues) of ALL arrays that a certain element is part of (always 4)
     # minimum is 0
@@ -110,8 +113,17 @@ class Scanner:
     def is_all_assigned(self):
         return not np.any(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
     
+    # Check whether we're done
+    # collect data about the reason
     def is_done(self):
-        return self.is_data_used() or self.is_all_assigned() or not self.changeOccured
+        is_done = self.is_data_used() or self.is_all_assigned() or not self.changeOccured
+        if is_done and self.is_data_used():
+            self.termination_reasons["data used"] += 1
+        if is_done and self.is_all_assigned():
+            self.termination_reasons["all assigned"] += 1
+        if is_done and not self.changeOccured:
+            self.termination_reasons["no change"] += 1
+        return is_done
     
     def create_empty(self):
         matrix = np.empty((self.height, self.width), dtype=ScannerObject)
@@ -152,6 +164,7 @@ if __name__ == "__main__":
     else:
         with f:
             n_layers = int(f.readline())
+            termination_reasons = {"data used": 0, "all assigned": 0, "no change": 0}
 
             for layer in range(n_layers):
                 sensor_data = []
@@ -162,6 +175,8 @@ if __name__ == "__main__":
                 if arg == "debug":
                     print(f"Layer {layer}:")
 
-                scanner = Scanner(sensor_data)
+                scanner = Scanner(sensor_data, termination_reasons)
                 scanner.fill_loop(arg)
                 print(scanner)
+
+            print(termination_reasons)
