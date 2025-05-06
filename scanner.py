@@ -76,12 +76,15 @@ class Scanner:
                     obj.assignment = Assignment.EMPTY
                     self.changeOccured = True
 
-    # mode: "run" or "debug"
+    # mode: "run" or "step"
+    # in step mode: 
+    #   - the user starts each loop iteration with a button press
+    #   - each iteration, the current state gets printed
     def fill_loop(self, mode="run"):
-        while(mode == "run" and not self.is_done() or mode == "debug" and input() == "" and not self.is_done()):
+        while(mode == "run" and not self.is_done() or mode == "step" and input() == "" and not self.is_done()):
             self.changeOccured = False
 
-            if mode == "debug":
+            if mode == "step":
                 print(self)
                 print(self.sensor_data_horizontal)
                 print(self.sensor_data_diagonal_lr)
@@ -148,13 +151,14 @@ class Scanner:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage:\n\tpython scanner.py <input-file>\n")
-        print("Options:\n\t-d  use debug-mode")
+        print("Usage:\n\tpython scanner.py <input-file> [options]\n")
+        print("Options:\n\t-s  use step-mode")
+        print("\t-c  print collected termination data")
         sys.exit(1)
 
     file_path = sys.argv[1]
-    arg = "debug" if len(sys.argv) > 2 and sys.argv[2] == "-d" else "run"
-
+    arg = "step" if "-s" in sys.argv else "run"
+    collecting = "-c" in sys.argv
 
     try:
         f = open(file_path)
@@ -172,11 +176,12 @@ if __name__ == "__main__":
                     next_line = f.readline().split(" ")
                     sensor_data.append(list(map(int, next_line)))
             
-                if arg == "debug":
+                if arg == "step":
                     print(f"Layer {layer}:")
 
                 scanner = Scanner(sensor_data, termination_reasons)
                 scanner.fill_loop(arg)
                 print(scanner)
 
-            print(termination_reasons)
+            if collecting:
+                print(termination_reasons)
