@@ -126,7 +126,7 @@ class Scanner:
                 print("Found a solution:")
                 print(self)
             self.termination_reasons["data used"] += 1
-            if self.solution_has_been_found and np.all(np.equal(self.matrix, self.search_solution)):
+            if self.solution_has_been_found and not np.all(np.equal(self.matrix, self.search_solution)):
                 # a second solution has been found
                 self.matrix = self.create_empty()
                 return False
@@ -149,12 +149,8 @@ class Scanner:
 
             for idx in indices_of_unassigned:
                 # recursive calls:
-                if not self.search_in_branch(idx, mode, Assignment.EMPTY):
-                    self.matrix = self.create_empty()
-                    return False
-                if not self.search_in_branch(idx, mode, Assignment.FULL):
-                    self.matrix = self.create_empty()
-                    return False
+                self.search_in_branch(idx, mode, Assignment.EMPTY)
+                self.search_in_branch(idx, mode, Assignment.FULL)
             
             return self.solution_has_been_found
 

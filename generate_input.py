@@ -2,8 +2,8 @@ import random
 import sys
 import numpy as np
 
-MAX_HEIGHT = 10
-MAX_WIDTH = 15
+MAX_HEIGHT = 5
+MAX_WIDTH = 5
 
 def generate_random_data(n):
     for _ in range(n):
@@ -27,6 +27,8 @@ def generate_random_valid_data(n, prob):
     for _ in range(n):
         height = random.randint(1, MAX_HEIGHT)
         width = random.randint(1, MAX_WIDTH)
+        height = MAX_HEIGHT
+        width = MAX_WIDTH
 
         random_matrix = np.where(np.random.rand(height, width) < prob, 1, 0)
 
