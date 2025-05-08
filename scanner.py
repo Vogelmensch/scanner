@@ -146,6 +146,7 @@ class Scanner:
         if not self.has_change_occured:
             # indices of unassigned fields
             indices_of_unassigned = np.argwhere(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
+
             for idx in indices_of_unassigned:
                 # recursive calls:
                 if not self.search_in_branch(idx, mode, Assignment.EMPTY):
@@ -173,7 +174,7 @@ class Scanner:
         self.matrix[tuple(idx)].assignment = value
         self.has_change_occured = True
         if value == Assignment.FULL:
-            self.update_sensor_data(idx[0], idx[1])
+            self.update_sensor_data(idx[1], idx[0])
         success = self.fill_loop(mode)
 
         # re-assign old data
@@ -195,14 +196,7 @@ class Scanner:
     # Check whether we're done
     # collect data about the reason
     def is_done(self):
-        is_done = self.is_data_used() or self.is_all_assigned() or not self.has_change_occured
-        if is_done and self.is_data_used():
-            self.termination_reasons["data used"] += 1
-        if is_done and self.is_all_assigned():
-            self.termination_reasons["all assigned"] += 1
-        if is_done and not self.has_change_occured:
-            self.termination_reasons["no change"] += 1
-        return is_done
+        return self.is_data_used() or self.is_all_assigned() or not self.has_change_occured
     
     def create_empty(self):
         matrix = np.empty((self.height, self.width), dtype=ScannerObject)

@@ -27,7 +27,6 @@ def generate_random_valid_data(n, prob):
     for _ in range(n):
         height = random.randint(1, MAX_HEIGHT)
         width = random.randint(1, MAX_WIDTH)
-        full = height + width - 1
 
         random_matrix = np.where(np.random.rand(height, width) < prob, 1, 0)
 
