@@ -122,7 +122,7 @@ class Scanner:
 
         # TODO: think about this
         if self.is_data_used():
-            if mode == "debug":
+            if mode == "step":
                 print("Found a solution:")
                 print(self)
             self.termination_reasons["data used"] += 1
