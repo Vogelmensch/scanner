@@ -133,25 +133,50 @@ class Scanner:
             indices_of_unassigned = np.argwhere(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
             for idx in indices_of_unassigned:
                 # recursive calls:
-                if self.search_in_branch(idx, mode, Assignment.EMPTY):
-                    if self.solution_has_been_found:
-                        return False
-                    self.solution_has_been_found = True
-                if self.search_in_branch(idx, mode, Assignment.FULL):
-                    if self.solution_has_been_found:
-                            return False
-                    self.solution_has_been_found = True
+                if not self.search_in_branch(idx, mode, Assignment.EMPTY):
+                    return False
+                if not self.search_in_branch(idx, mode, Assignment.FULL):
+                    return False
             
             return self.solution_has_been_found
 
-
+    # assign a variable and call fill_loop recursively
+    # clean up afterwards
+    # return True if we can continue searching 
+    # return False if two solutions have been found
     def search_in_branch(self, idx, mode, value):
-        # Create new Scanner to keep state
-        branch_scanner = Scanner(self.sensor_data.copy(), {"data used": 0, "all assigned": 0, "no change": 0})
-        branch_scanner.matrix = deepcopy(self.matrix)
-        branch_scanner.matrix[tuple(idx)].assignment = value
+        # keep old data
+        old_matrix = deepcopy(self.matrix)
+        old_sensor_data_horizontal = self.sensor_data_horizontal.copy()
+        old_sensor_data_diagonal_lr = self.sensor_data_diagonal_lr.copy()
+        old_sensor_data_vertical = self.sensor_data_vertical.copy()
+        old_sensor_data_diagonal_rl = self.sensor_data_diagonal_rl.copy()
 
-        return branch_scanner.fill_loop(mode)
+        # assign variable
+        self.matrix[tuple(idx)].assignment = value
+        self.has_change_occured = True
+        if value == Assignment.FULL:
+            self.update_sensor_data(idx[0], idx[1])
+        success = self.fill_loop(mode)
+
+        if success and mode == "debug":
+            print("Found a solution:")
+            print(self)
+
+        # re-assign old data
+        self.matrix = old_matrix
+        self.sensor_data_horizontal = old_sensor_data_horizontal
+        self.sensor_data_diagonal_lr = old_sensor_data_diagonal_lr
+        self.sensor_data_vertical = old_sensor_data_vertical
+        self.sensor_data_diagonal_rl = old_sensor_data_diagonal_rl
+
+        # More than one solution: Ambiguous!
+        if success and self.solution_has_been_found:
+            return False
+        self.solution_has_been_found = True
+
+        return True
+
 
     def is_data_used(self):
         return not (np.any(self.sensor_data_horizontal != 0) or np.any(self.sensor_data_vertical != 0) or np.any(self.sensor_data_diagonal_lr != 0) or np.any(self.sensor_data_diagonal_rl != 0))
