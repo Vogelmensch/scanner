@@ -13,6 +13,9 @@ class ScannerObject:
         self.assignment = Assignment.UNASSIGNED
         self.x = x
         self.y = y
+    
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y and self.assignment == other.assignment
 
 class Scanner:
     # initiates a scanner
@@ -116,7 +119,16 @@ class Scanner:
 
         # TODO: think about this
         if self.is_data_used():
+            if mode == "debug":
+                print("Found a solution:")
+                print(self)
             self.termination_reasons["data used"] += 1
+            if self.solution_has_been_found and np.all(np.equal(self.matrix, self.search_solution)):
+                # a second solution has been found
+                self.matrix = self.create_empty()
+                return False
+            self.solution_has_been_found = True
+            self.search_solution = deepcopy(self.matrix)
             return True
 
         # Fields may all be assigned, but there is data left 
@@ -134,8 +146,10 @@ class Scanner:
             for idx in indices_of_unassigned:
                 # recursive calls:
                 if not self.search_in_branch(idx, mode, Assignment.EMPTY):
+                    self.matrix = self.create_empty()
                     return False
                 if not self.search_in_branch(idx, mode, Assignment.FULL):
+                    self.matrix = self.create_empty()
                     return False
             
             return self.solution_has_been_found
@@ -159,10 +173,6 @@ class Scanner:
             self.update_sensor_data(idx[0], idx[1])
         success = self.fill_loop(mode)
 
-        if success and mode == "debug":
-            print("Found a solution:")
-            print(self)
-
         # re-assign old data
         self.matrix = old_matrix
         self.sensor_data_horizontal = old_sensor_data_horizontal
@@ -170,12 +180,7 @@ class Scanner:
         self.sensor_data_vertical = old_sensor_data_vertical
         self.sensor_data_diagonal_rl = old_sensor_data_diagonal_rl
 
-        # More than one solution: Ambiguous!
-        if success and self.solution_has_been_found:
-            return False
-        self.solution_has_been_found = True
-
-        return True
+        return success
 
 
     def is_data_used(self):
