@@ -15,6 +15,8 @@ class ScannerObject:
         self.y = y
     
     def __eq__(self, other):
+        if other == None:
+            return False
         return self.x == other.x and self.y == other.y and self.assignment == other.assignment
 
 class Scanner:
@@ -90,7 +92,6 @@ class Scanner:
     # in step mode: 
     #   - the user starts each loop iteration with a button press
     #   - each iteration, the current state gets printed
-    # returns whether a valid solution has been found
     def fill_loop(self, mode="run"):
         while(mode == "run" and not self.is_done() or mode == "step" and input() == "" and not self.is_done()):
             self.has_change_occured = False
@@ -120,32 +121,34 @@ class Scanner:
 
         # -- Now: What's the reason we left the loop? --
 
-        # TODO: think about this
+        # We found a solution!
         if self.is_data_used():
             if mode == "step":
                 print("Found a solution:")
                 print(self)
             self.termination_reasons["data used"] += 1
-            if self.solutions_found > 0 and not np.all(np.equal(self.matrix, self.search_solution)):
+
+            # Increase solutions_found only if it's a new solution.
+            if not np.all(np.equal(self.matrix, self.search_solution)):
                 # a second solution has been found
-                print("It's another")
-                self.matrix = self.create_empty()
+                if mode == "step": 
+                    print("This solution differs from the last\n")
                 self.solutions_found += 1
-                return False
-            self.solutions_found += 1
+
             self.search_solution = deepcopy(self.matrix)
-            return True
 
         # Fields may all be assigned, but there is data left 
         # -> contradiction
-        if self.is_all_assigned():
+        elif self.is_all_assigned():
             self.termination_reasons["all assigned"] += 1
             self.matrix = self.create_empty()
-            return False
         
         # We're stuck!
         # -> perform local search: assign a variable and continue
-        if not self.has_change_occured:
+        elif not self.has_change_occured:
+            if mode == "step":
+                print("Starting search...")
+
             # indices of unassigned fields
             indices_of_unassigned = np.argwhere(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
 
@@ -154,17 +157,14 @@ class Scanner:
                 for assignment in [Assignment.EMPTY, Assignment.FULL]:
                     self.search_in_branch(idx, mode, assignment)
                     if self.solutions_found > 1:
+                        # the solution is ambiguous -> leave loop
                         self.matrix = self.create_empty()
-                        return False
-
-            return self.solutions_found == 1
+                        return 
 
     # assign a variable and call fill_loop recursively
     # clean up afterwards
-    # return True if we can continue searching 
-    # return False if two solutions have been found
     def search_in_branch(self, idx, mode, value):
-        # keep old data
+        # save old data
         old_matrix = deepcopy(self.matrix)
         old_sensor_data_horizontal = self.sensor_data_horizontal.copy()
         old_sensor_data_diagonal_lr = self.sensor_data_diagonal_lr.copy()
@@ -176,7 +176,7 @@ class Scanner:
         self.has_change_occured = True
         if value == Assignment.FULL:
             self.update_sensor_data(idx[1], idx[0])
-        success = self.fill_loop(mode)
+        self.fill_loop(mode)
 
         # re-assign old data
         self.matrix = old_matrix
@@ -184,9 +184,6 @@ class Scanner:
         self.sensor_data_diagonal_lr = old_sensor_data_diagonal_lr
         self.sensor_data_vertical = old_sensor_data_vertical
         self.sensor_data_diagonal_rl = old_sensor_data_diagonal_rl
-
-        return success
-
 
     def is_data_used(self):
         return not (np.any(self.sensor_data_horizontal != 0) or np.any(self.sensor_data_vertical != 0) or np.any(self.sensor_data_diagonal_lr != 0) or np.any(self.sensor_data_diagonal_rl != 0))
@@ -197,7 +194,7 @@ class Scanner:
     # Check whether we're done
     # collect data about the reason
     def is_done(self):
-        return self.is_data_used() or self.is_all_assigned() or not self.has_change_occured
+        return self.is_data_used() and self.solutions_found > 0 or self.is_all_assigned() or not self.has_change_occured
     
     def create_empty(self):
         matrix = np.empty((self.height, self.width), dtype=ScannerObject)
@@ -205,7 +202,6 @@ class Scanner:
             for y in range(self.height):
                 matrix[y,x] = ScannerObject(x,y)
                 matrix[y,x].assignment = Assignment.EMPTY
-        
         return matrix
     
     # assign one of the unassigned fields with the provided value
@@ -215,7 +211,6 @@ class Scanner:
         for idx in indices:
             self.matrix[idx] = value
         
-
     def __str__(self):
         str = ""
         for row in np.vectorize(lambda b: ' ' if b.assignment == Assignment.UNASSIGNED else '#' if b.assignment == Assignment.FULL else '.')(self.matrix):
@@ -223,9 +218,6 @@ class Scanner:
                 print(char, end="")
             print()
         return str
-
-
-
 
 
 if __name__ == "__main__":
