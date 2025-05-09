@@ -42,7 +42,7 @@ class Scanner:
         # -> catches unsolvable problems
         self.has_change_occured = True
 
-        self.solution_has_been_found = False
+        self.solutions_found = 0
         # solution we found through search
         self.search_solution = np.empty((self.height, self.width), dtype=ScannerObject)
 
@@ -126,11 +126,13 @@ class Scanner:
                 print("Found a solution:")
                 print(self)
             self.termination_reasons["data used"] += 1
-            if self.solution_has_been_found and not np.all(np.equal(self.matrix, self.search_solution)):
+            if self.solutions_found > 0 and not np.all(np.equal(self.matrix, self.search_solution)):
                 # a second solution has been found
+                print("It's another")
                 self.matrix = self.create_empty()
+                self.solutions_found += 1
                 return False
-            self.solution_has_been_found = True
+            self.solutions_found += 1
             self.search_solution = deepcopy(self.matrix)
             return True
 
@@ -149,10 +151,13 @@ class Scanner:
 
             for idx in indices_of_unassigned:
                 # recursive calls:
-                self.search_in_branch(idx, mode, Assignment.EMPTY)
-                self.search_in_branch(idx, mode, Assignment.FULL)
-            
-            return self.solution_has_been_found
+                for assignment in [Assignment.EMPTY, Assignment.FULL]:
+                    self.search_in_branch(idx, mode, assignment)
+                    if self.solutions_found > 1:
+                        self.matrix = self.create_empty()
+                        return False
+
+            return self.solutions_found == 1
 
     # assign a variable and call fill_loop recursively
     # clean up afterwards
