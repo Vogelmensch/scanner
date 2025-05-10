@@ -192,7 +192,6 @@ class Scanner:
         return not np.any(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
     
     # Check whether we're done
-    # collect data about the reason
     def is_done(self):
         return self.is_data_used() and self.solutions_found > 0 or self.is_all_assigned() or not self.has_change_occured
     
@@ -203,13 +202,6 @@ class Scanner:
                 matrix[y,x] = ScannerObject(x,y)
                 matrix[y,x].assignment = Assignment.EMPTY
         return matrix
-    
-    # assign one of the unassigned fields with the provided value
-    def assign_all(self, value):
-        # indices of unassigned fields
-        indices = np.argwhere(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
-        for idx in indices:
-            self.matrix[idx] = value
         
     def __str__(self):
         str = ""
