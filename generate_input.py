@@ -25,8 +25,6 @@ def generate_random_data(n):
 # prob: Probability of an element to be "full"
 def generate_random_valid_data(n, prob):
     for _ in range(n):
-        height = random.randint(1, MAX_HEIGHT)
-        width = random.randint(1, MAX_WIDTH)
         height = MAX_HEIGHT
         width = MAX_WIDTH
 

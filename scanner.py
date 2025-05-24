@@ -46,7 +46,7 @@ class Scanner:
 
         self.solutions_found = 0
         # solution we found through search
-        self.search_solution = np.empty((self.height, self.width), dtype=ScannerObject)
+        self.search_solution = self.create_empty()
 
         # collects data about the reason why the program terminated
         self.termination_reasons = termination_reasons
@@ -72,21 +72,23 @@ class Scanner:
         # if all elements are assigned, there is nothing to do here
         if n_of_unassigned == 0:
             return
+        
+        # Declare all unassigned as empty
+        if sensor_data_point == 0:
+            for obj in arr:
+                if obj.assignment == Assignment.UNASSIGNED:
+                    obj.assignment = Assignment.EMPTY
+                    self.has_change_occured = True
 
         # Declare all unassigned as full
-        if n_of_unassigned == sensor_data_point:
+        elif n_of_unassigned == sensor_data_point:
             for obj in arr:
                 if obj.assignment == Assignment.UNASSIGNED:
                     obj.assignment = Assignment.FULL
                     self.update_sensor_data(obj.x, obj.y)
                     self.has_change_occured = True
 
-        # Declare all unassigned as empty
-        elif sensor_data_point == 0:
-            for obj in arr:
-                if obj.assignment == Assignment.UNASSIGNED:
-                    obj.assignment = Assignment.EMPTY
-                    self.has_change_occured = True
+
 
     # mode: "run" or "step"
     # in step mode: 
@@ -131,7 +133,7 @@ class Scanner:
             # Increase solutions_found only if it's a new solution.
             if not np.all(np.equal(self.matrix, self.search_solution)):
                 # a second solution has been found
-                if mode == "step": 
+                if mode == "step" and self.solutions_found > 0: 
                     print("This solution differs from the last\n")
                 self.solutions_found += 1
 
@@ -160,6 +162,7 @@ class Scanner:
                         # the solution is ambiguous -> leave loop
                         self.matrix = self.create_empty()
                         return 
+            self.matrix = self.search_solution
 
     # assign a variable and call fill_loop recursively
     # clean up afterwards
@@ -205,7 +208,7 @@ class Scanner:
         
     def __str__(self):
         str = ""
-        for row in np.vectorize(lambda b: ' ' if b.assignment == Assignment.UNASSIGNED else '#' if b.assignment == Assignment.FULL else '.')(self.matrix):
+        for row in np.vectorize(lambda b: '  ' if b.assignment == Assignment.UNASSIGNED else '# ' if b.assignment == Assignment.FULL else '. ')(self.matrix):
             for char in row:
                 print(char, end="")
             print()
@@ -244,7 +247,18 @@ if __name__ == "__main__":
 
                 scanner = Scanner(sensor_data, termination_reasons)
                 scanner.fill_loop(arg)
-                print(scanner)
+                
+                if arg == "run":
+                    print(scanner)
+                
+                if arg == "step":
+                    print(scanner.sensor_data_horizontal)
+                    print(scanner.sensor_data_diagonal_lr)
+                    print(scanner.sensor_data_vertical)
+                    print(scanner.sensor_data_diagonal_rl)
+                    print()
+                    
+                print()
 
             if collecting:
                 print(termination_reasons)
