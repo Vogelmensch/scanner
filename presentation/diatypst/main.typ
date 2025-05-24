@@ -15,6 +15,8 @@
   footer: false,
 )
 
+#let font = "libertinus serif"
+
 #let dual_matrix(image_link, code) = {
   grid(
     align: left + horizon,
@@ -668,9 +670,9 @@ if not has_change_occured:
 == Are we done?
 
 *Does the algorithm always find a solution?*\
-Answer: No! 
-  - A full assignment is valid only if all entries of `sensor_data` become zero
-  - We can get stuck $=>$ perform local search\ \
+Answer: No!
+- A full assignment is valid only if all entries of `sensor_data` become zero
+- We can get stuck $=>$ perform local search\ \
 
 *What if there is no solution?*\
 Answer: Data will be contradictory\ \
@@ -753,7 +755,7 @@ Experiment confirms this!
 
 The problem definition states that we are working with a "body" scanner
 - Matrix property: Most `FULL` cells are located next to each other
-- Our algorithm uses this property 
+- Our algorithm uses this property
 $=>$ Most inputs can be solved in sub-exponential time
 
 
@@ -766,4 +768,40 @@ $=>$ Most inputs can be solved in sub-exponential time
 
 == Summary
 
-TODO
+#table(
+  stroke: 0pt,
+  columns: (30%, 70%),
+  align: left + horizon,
+  [
+    Input:\
+    #set text(font: "DejaVu Sans Mono")
+    1\
+    2 2 3 2\
+    0 1 3 3 2 0 0\
+    2 4 3 0\
+    1 2 1 2 2 1 0\
+    
+    #set text(font: font)
+    Output:
+    #image("matrix-filled.svg", height: 40%)
+  ],
+  ```Python
+  def compare_and_fill(sensor_data_point, arr):
+          # number of unassigned elements
+          n_of_unassigned = n_of_unassigned(arr)
+          # Declare all unassigned as empty
+          if sensor_data_point == 0:
+              for cell in arr:
+                  if cell == UNASSIGNED:
+                      cell = EMPTY
+
+          # Declare all unassigned as full
+          elif sensor_data_point == n_of_unassigned:
+              for cell in arr:
+                  if cell == UNASSIGNED:
+                      cell = FULL
+                      update_sensor_data(cell.x, cell.y)
+
+  ```
+)
+
