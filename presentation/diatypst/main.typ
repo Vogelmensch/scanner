@@ -661,19 +661,21 @@ if not has_change_occured:
                         return
 ```
 
-== Demo: Two Solutions
+== Demo: Local Search
 
 #live_demo()
 
 == Are we done?
 
-- Does the algorithm always find a solution?
-Answer: No! Only if all entries of `sensor_data` become zero\ \
+*Does the algorithm always find a solution?*\
+Answer: No! 
+  - A full assignment is valid only if all entries of `sensor_data` become zero
+  - We can get stuck $=>$ perform local search\ \
 
-- What if there is no solution?
+*What if there is no solution?*\
 Answer: Data will be contradictory\ \
 
-- What if there are multiple solutions?
+*What if there are multiple solutions?*\
 Answer: We get stuck $=>$ perform local search
 
 = Discussion
