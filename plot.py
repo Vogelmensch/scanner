@@ -8,7 +8,7 @@ y2 = 6 * xs - 2
 
 plt.figure()
 plt.plot(xs, y2, label="$6n-2$")
-plt.plot(xs, y1, label="$n^2$")
+plt.plot(xs, y1, label="$2^n$")
 plt.xlabel("dimension $n$")
 plt.ylabel("number of variables / equations")
 plt.grid()
