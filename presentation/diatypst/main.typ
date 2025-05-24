@@ -748,6 +748,20 @@ Experiment confirms this!
 
 #align(right + bottom, image("plot.svg", height: 60%))
 
+
+== Why it's a good algorithm for this problem
+
+The problem definition states that we are working with a "body" scanner
+- Matrix property: Most `FULL` cells are located next to each other
+- Our algorithm uses this property 
+$=>$ Most inputs can be solved in sub-exponential time
+
+
+== Demo: Chunk Inputs
+
+#live_demo()
+
+
 = Summary
 
 == Summary

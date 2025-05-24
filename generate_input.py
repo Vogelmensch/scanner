@@ -21,6 +21,7 @@ def generate_random_data(n):
         for i in range(full):
             print(random.randint(0, i+2) if i <= half else random.randint(0, full-i), end=" " if i < full-1 else "\n")
 
+
 # n: Number of matrices to return
 # prob: Probability of an element to be "full"
 def generate_random_valid_data(n, prob):
@@ -29,32 +30,67 @@ def generate_random_valid_data(n, prob):
         width = MAX_WIDTH
 
         random_matrix = np.where(np.random.rand(height, width) < prob, 1, 0)
+        
+        matrix_to_data(random_matrix, height, width)
 
-        sensor_data_horizontal = np.sum(random_matrix, axis=1)
-        sensor_data_diagonal_lr = np.array([np.sum(np.diagonal(np.fliplr(random_matrix), offset)) for offset in range(width-1, 1-height-1, -1)])
-        sensor_data_vertical = np.sum(random_matrix, axis=0)
-        sensor_data_diagonal_rl = np.array([np.sum(np.diagonal(random_matrix, offset)) for offset in range(1-height, width)])
 
-        for idx, n in enumerate(sensor_data_horizontal):
-            print(str(n), end=" " if idx < len(sensor_data_horizontal)-1 else "\n")
-        for idx, n in enumerate(sensor_data_diagonal_lr):
-            print(str(n), end=" " if idx < len(sensor_data_diagonal_lr)-1 else "\n")
-        for idx, n in enumerate(sensor_data_vertical):
-            print(str(n), end=" " if idx < len(sensor_data_vertical)-1 else "\n")
-        for idx, n in enumerate(sensor_data_diagonal_rl):
-            print(str(n), end=" " if idx < len(sensor_data_diagonal_rl)-1 else "\n")
+def generate_chunk(n_matrices, chance, height, width):
+    for _ in range(n_matrices):
+        chunk_matrix = np.zeros((height, width), dtype=int)
+        
+        # make one random element 1
+        # chunk_matrix[np.random.randint(0, height), np.random.randint(0, width)] = 1
+        chunk_matrix[int(height/2), int(width/2)] = 1
+        
+        # maybe assign 1 at cells around cells that are already 1, iteratively
+        for _ in range(min(height, width)):
+            
+            for h in range(height):
+                for w in range(width):
+                    # up
+                    if h > 0:
+                        chunk_matrix[h, w] = 1 if chunk_matrix[h-1, w] == 1 and np.random.rand() < chance else chunk_matrix[h, w]
+                    # right
+                    if w < width-1:
+                        chunk_matrix[h, w] = 1 if chunk_matrix[h, w+1] == 1 and np.random.rand() < chance else chunk_matrix[h, w]
+                    # down
+                    if h < height-1:
+                        chunk_matrix[h, w] = 1 if chunk_matrix[h+1, w] == 1 and np.random.rand() < chance else chunk_matrix[h, w]
+                    # left
+                    if w > 0:
+                        chunk_matrix[h, w] = 1 if chunk_matrix[h, w-1] == 1 and np.random.rand() < chance else chunk_matrix[h, w]
+            
+        matrix_to_data(chunk_matrix, height, width)
+   
+
+# gets matrix of ones and zeros
+def matrix_to_data(matrix, height, width):
+    sensor_data_horizontal = np.sum(matrix, axis=1)
+    sensor_data_diagonal_lr = np.array([np.sum(np.diagonal(np.fliplr(matrix), offset)) for offset in range(width-1, 1-height-1, -1)])
+    sensor_data_vertical = np.sum(matrix, axis=0)
+    sensor_data_diagonal_rl = np.array([np.sum(np.diagonal(matrix, offset)) for offset in range(1-height, width)])
+
+    for idx, n in enumerate(sensor_data_horizontal):
+        print(str(n), end=" " if idx < len(sensor_data_horizontal)-1 else "\n")
+    for idx, n in enumerate(sensor_data_diagonal_lr):
+        print(str(n), end=" " if idx < len(sensor_data_diagonal_lr)-1 else "\n")
+    for idx, n in enumerate(sensor_data_vertical):
+        print(str(n), end=" " if idx < len(sensor_data_vertical)-1 else "\n")
+    for idx, n in enumerate(sensor_data_diagonal_rl):
+        print(str(n), end=" " if idx < len(sensor_data_diagonal_rl)-1 else "\n")
 
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python generate_input.py <number of inputs> <probability for 1s>")
-        sys.exit()
+    # if len(sys.argv) != 3:
+    #     print("Usage: python generate_input.py <number of inputs> <probability for 1s>")
+    #     sys.exit()
 
 
-    n = int(sys.argv[1])
-    prob = float(sys.argv[2])
-    print(n)
-    #generate_random_data(n)
-    generate_random_valid_data(n, prob)
-        
+    # n = int(sys.argv[1])
+    # prob = float(sys.argv[2])
+    # print(n)
+    # #generate_random_data(n)
+    # generate_random_valid_data(n, prob)
+    print(100)
+    generate_chunk(n_matrices=100, chance=0.2, height=10, width=15)
