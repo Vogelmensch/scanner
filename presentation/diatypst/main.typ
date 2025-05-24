@@ -34,7 +34,7 @@
 == About questions
 
 - Please ask questions if you don't understand an important aspect
-- Otherwise, please save your questions for after the presentation
+- Otherwise, please save your questions for the discussion after the presentation
 
 // Table of Contents
 #outline(depth: 1)
