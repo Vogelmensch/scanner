@@ -9,7 +9,7 @@
   // Optional Styling (for more / explanation see in the typst universe)
   ratio: 16 / 9,
   layout: "medium",
-  title-color: green,
+  title-color: rgb("#2e8340"),
   toc: false,
   count: "number",
   footer: false,
@@ -33,11 +33,8 @@
 
 == About questions
 
-- Please ask questions if you don't understand an important aspect
+- Please ask questions if you do not understand an important aspect
 - Otherwise, please save your questions for the discussion after the presentation
-
-// Table of Contents
-#outline(depth: 1)
 
 = Problem Definition
 
@@ -124,13 +121,8 @@
 #grid(
   columns: (30%, 40%, 30%),
   align: horizon,
-  rows: (20%, 70%, 10%),
-  [],
-  [The number at the top represents the number of matrices that will follow.
-
-    In our case, it's just one.],
-  [],
-
+  rows: (10%, 80%, 10%),
+  [], [], [],
   [],
   [
     #set text(font: "DejaVu Sans Mono")
@@ -142,7 +134,8 @@
   ],
   [],
 
-  [], [And that's our input!],
+  [], 
+  [],
 )
 
 == Live Demo
@@ -500,10 +493,6 @@
 //   ],
 // )
 
-== Code Snippets
-- Snippets of the actual Python-program
-- Highly simplified - treat it like pseudo-code
-
 == Fill known cells
 
 ```Python
@@ -610,7 +599,7 @@ def is_all_assigned(matrix):
         return not np.any(matrix.cell == UNASSIGNED)
 ```
 
-3. Check whether we're done
+3. Check whether we are done
 ```Python
 def is_done():
         return is_data_used(sensor_data) or is_all_assigned(matrix)
@@ -667,7 +656,7 @@ if not has_change_occured:
 
 #live_demo()
 
-== Are we done?
+== Conclusion
 
 *Does the algorithm always find a solution?*\
 Answer: No!
@@ -751,7 +740,7 @@ Experiment confirms this!
 #align(right + bottom, image("plot.svg", height: 60%))
 
 
-== Why it's a good algorithm for this problem
+== Justification for Algorithm Selection
 
 The problem definition states that we are working with a "body" scanner
 - Matrix property: Most `FULL` cells are located next to each other
@@ -763,8 +752,6 @@ $=>$ Most inputs can be solved in sub-exponential time
 
 #live_demo()
 
-
-= Summary
 
 == Summary
 
@@ -780,7 +767,7 @@ $=>$ Most inputs can be solved in sub-exponential time
     0 1 3 3 2 0 0\
     2 4 3 0\
     1 2 1 2 2 1 0\
-    
+
     #set text(font: font)
     Output:
     #image("matrix-filled.svg", height: 40%)
@@ -802,6 +789,5 @@ $=>$ Most inputs can be solved in sub-exponential time
                       cell = FULL
                       update_sensor_data(cell.x, cell.y)
 
-  ```
+  ```,
 )
-
