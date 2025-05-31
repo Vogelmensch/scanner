@@ -2,6 +2,7 @@ import numpy as np
 from enum import Enum
 import sys
 from copy import deepcopy
+from time import time
 
 class Assignment(Enum):
     UNASSIGNED = 1
@@ -21,7 +22,7 @@ class ScannerObject:
 
 class Scanner:
     # initiates a scanner
-    def __init__(self, sensor_data, termination_reasons):
+    def __init__(self, sensor_data, termination_reasons, max_time = 0):
         self.sensor_data = sensor_data
 
         self.height = len(sensor_data[0])
@@ -50,6 +51,15 @@ class Scanner:
 
         # collects data about the reason why the program terminated
         self.termination_reasons = termination_reasons
+        
+        # time after initialization for measurement 
+        self.start_time = time()
+        
+        # max time in seconds for solving
+        self.max_time = max_time
+        
+        self.use_timeout = max_time > 0
+        self.timed_out = False
 
     # update sensor data (number of unassigned Trues) of ALL arrays that a certain element is part of (always 4)
     # minimum is 0
@@ -150,11 +160,13 @@ class Scanner:
         elif not self.has_change_occured:
             if mode == "step":
                 print("Starting search...")
-
+                
             # indices of unassigned fields
             indices_of_unassigned = np.argwhere(np.vectorize(lambda obj: obj.assignment == Assignment.UNASSIGNED)(self.matrix))
 
             for idx in indices_of_unassigned:
+                if self.timed_out:
+                    return
                 # recursive calls:
                 for assignment in [Assignment.EMPTY, Assignment.FULL]:
                     self.search_in_branch(idx, mode, assignment)
@@ -167,6 +179,11 @@ class Scanner:
     # assign a variable and call fill_loop recursively
     # clean up afterwards
     def search_in_branch(self, idx, mode, value):
+        # abort search immediately if out of time
+        if self.use_timeout and time() - self.start_time > self.max_time:
+            self.timed_out = True
+            return
+        
         # save old data
         old_matrix = deepcopy(self.matrix)
         old_sensor_data_horizontal = self.sensor_data_horizontal.copy()
@@ -225,6 +242,8 @@ if __name__ == "__main__":
     file_path = sys.argv[1]
     arg = "step" if "-s" in sys.argv else "run"
     collecting = "-c" in sys.argv
+    use_timeout = "-t" in sys.argv
+    max_time = 0.01
 
     try:
         f = open(file_path)
@@ -235,6 +254,7 @@ if __name__ == "__main__":
         with f:
             n_layers = int(f.readline())
             termination_reasons = {"data used": 0, "all assigned": 0, "no change": 0}
+            n_timeouts = 0
 
             for layer in range(n_layers):
                 sensor_data = []
@@ -245,8 +265,12 @@ if __name__ == "__main__":
                 if arg == "step":
                     print(f"Layer {layer}:")
 
-                scanner = Scanner(sensor_data, termination_reasons)
+                scanner = Scanner(sensor_data, termination_reasons, max_time if use_timeout else 0)
                 scanner.fill_loop(arg)
+                
+                if use_timeout and scanner.timed_out:
+                    print(time() - scanner.start_time)
+                    n_timeouts += 1
                 
                 if arg == "run":
                     print(scanner)
@@ -259,6 +283,12 @@ if __name__ == "__main__":
                     print()
                     
                 print()
-
+                
+            
             if collecting:
                 print(termination_reasons)
+                
+            if use_timeout:
+                print(f"ran {n_layers} layers")
+                print(f"timed out {n_timeouts} times after {max_time} seconds")
+                print(f"rate: {n_timeouts / n_layers * 100} %")

@@ -26,8 +26,8 @@ def generate_random_data(n):
 # prob: Probability of an element to be "full"
 def generate_random_valid_data(n, prob):
     for _ in range(n):
-        height = MAX_HEIGHT
-        width = MAX_WIDTH
+        height = 10
+        width = 15
 
         random_matrix = np.where(np.random.rand(height, width) < prob, 1, 0)
         
@@ -92,5 +92,6 @@ if __name__ == "__main__":
     # print(n)
     # #generate_random_data(n)
     # generate_random_valid_data(n, prob)
-    print(100)
-    generate_chunk(n_matrices=100, chance=0.2, height=10, width=15)
+    print(10000)
+    generate_random_valid_data(n=10000, prob=0.4)
+    #generate_chunk(n_matrices=10000, chance=0.2, height=10, width=15)

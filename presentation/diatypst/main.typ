@@ -3,7 +3,7 @@
 #show: slides.with(
   title: "Scanner", // Required
   subtitle: "Selected Fun Problems of the ACM Programming Contest SS25",
-  date: "04./05.06.2025",
+  date: "04.06.2025",
   authors: "David Knöpp",
 
   // Optional Styling (for more / explanation see in the typst universe)
@@ -134,8 +134,7 @@
   ],
   [],
 
-  [], 
-  [],
+  [], [],
 )
 
 == Live Demo
@@ -538,13 +537,13 @@ while(not is_done()):
 
 == Are we done?
 
-- Does the algorithm always find a solution?
+- Does `compare_and_fill` always find a solution?
 - What if there is no solution?
 - What if there are multiple solutions?
 
 == Are we done?
 
-- Does the algorithm always find a solution?
+- Does `compare_and_fill` always find a solution?
 - What if there is no solution?
 - What if there are multiple solutions?
 
@@ -611,9 +610,9 @@ def is_done():
 
 == Multiple solutions
 
-- We always only assign `EMPTY` or `FULL` to a cell if we know it's state for certain
-- Therefore, with our current method, we can only detect certain solutions
-- If multiple solutions exist for a given input, we should get stuck
+- We assign `EMPTY` or `FULL` *only if* we know a state for certain
+- $=>$ with `compare_and_fill`, we can only detect *single* solutions
+- If multiple solutions exist for a given input $=>$ get stuck
 
 == Multiple Solutions: Local Search
 
@@ -659,9 +658,8 @@ if not has_change_occured:
 == Conclusion
 
 *Does the algorithm always find a solution?*\
-Answer: No!
-- A full assignment is valid only if all entries of `sensor_data` become zero
-- We can get stuck $=>$ perform local search\ \
+Answer: If it exists: Yes! But...
+- ... we can get stuck $=>$ perform local search\ \
 
 *What if there is no solution?*\
 Answer: Data will be contradictory\ \
@@ -671,92 +669,135 @@ Answer: We get stuck $=>$ perform local search
 
 = Discussion
 
-== Interpretation as Linear System of Equations
+== Time Complexity
 
-#table(
-  stroke: 0pt,
-  align: center + horizon,
-  columns: (45%, 10%, 45%),
-  image("matrix-Matrix Horiz Numbers.drawio.svg"),
-  $arrow$,
-  $
-    2 &= 0 + 1 + 1 + 0\
-    2 &= 0 + 1 + 1 + 0\
-    3 &= 1 + 1 + 1 + 0\
-    2 &= 1 + 1 + 0 + 0\
-  $,
+- Take a matrix of dimension $(n times m)$
+- Worst case: Local search from the beginning
+- Worst case time complexity: $cal(O)(2^(n dot m))$
+
+== Time Complexity: Using matrix property
+
+- Problem Definition: *Body* Scanner
+- $=>$ Matrix property: Most `FULL` cells are neighbored
+
+#text(
+  font: "DejaVu Sans Mono",
+  "
+      . . . . . . . . . . . . . . .
+      . . . . . . . . . . . . . . .
+      . . . . . # # . . . . . . . .
+      . . . . . # # # # # # # . . .
+      . . . . . # # # # # # # # # .
+      . . . . # # # # # # # # . # .
+      . . . . . # # # # # . . . . .
+      . . . . . . # # # # . . . . .
+      . . . . . . # # . # # . . . .
+      . . . . . . . . . . . . . . .",
 )
 
-== Interpretation as Linear System of Equations
+== Time Complexity: Using matrix property
 
-#table(
-  stroke: 0pt,
-  align: center + horizon,
-  columns: (45%, 10%, 45%),
-  image("matrix-grey_horiz.drawio.svg"),
-  $arrow$,
+- Problem Definition: *Body* Scanner
+- $=>$ Matrix property: Most `FULL` cells are neighbored
+
+#text(
+  font: "DejaVu Sans Mono",
+  "
+      . . . . . . . . . # # . . . .
+      . . . . . . . . # # # # # # .
+      . . . . . . . # # # # # . . .
+      . . . . . . . # # # # . . # .
+      . . . . . . # # # # # # # # #
+      . . . . . # # # # # # # # # #
+      . . . . . # # # # # # # # # #
+      . . . . . # . . # # # # # # #
+      . . . . . . . . . # # # . . .
+      . . . . . . . . . . # . . . . ",
+)
+
+== Time Complexity: Using matrix property
+
+- Problem Definition: *Body* Scanner
+- $=>$ Matrix property: Most `FULL` cells are neighbored
+
+#grid(
+  stroke: none,
+  columns: (60%, 40%),
+  [#text(
+      font: "DejaVu Sans Mono",
+      "
+      . . . . . . . . . # # . . . .
+      . . . . . . . . # # # # # # .
+      . . . . . . . # # # # # . . .
+      . . . . . . . # # # # . . # .
+      . . . . . . # # # # # # # # #
+      . . . . . # # # # # # # # # #
+      . . . . . # # # # # # # # # #
+      . . . . . # . . # # # # # # #
+      . . . . . . . . . # # # . . .
+      . . . . . . . . . . # . . . . ",
+    )],
   [
-    More general:
-    $
-      2 &= x_0 + x_1 + x_2 + x_3\
-      2 &= x_4 + x_5 + x_6 + x_7\
-      3 &= x_8 + x_9 + x_10 + x_11\
-      2 &= x_12 + x_13 + x_14 + x_15\
-    $
+    - `compare_and_fill` uses this property.
+    - Reduces search-space significantly.
   ],
 )
 
-== Interpretation as Linear System of Equations
 
-For a matrix of dimension $(n times n)$, we get
-- $bold(2^n)$ variables $x_0, ..., x_(2^n-1) in {0, 1}$
-- $n + n + (2n-1) + (2n-1) = bold(6n-2)$ linearly independent equations
-
-== Interpretation as Linear System of Equations
-
-For a matrix of dimension $(n times n)$, we get
-- $bold(2^n)$ variables $x_0, ..., x_(2^n-1) in {0, 1}$
-- $n + n + (2n-1) + (2n-1) = bold(6n-2)$ linearly independent equations
-
-Question: For which $n in bb(N)$ is the linear system of equations underdetermined?
-
-$=>$ Solve $2^n > 6n-2$
-
-
-== Interpretation as Linear System of Equations
-
-#align(center + horizon, image("plot.svg"))
-
-== Interpretation as Linear System of Equations
-
-Theory indicates:
-- For all $n >= 5$, the LSE is underdetermined $=>$ Possibly no solution
-
-Experiment confirms this!
-- For all valid inputs of $n < 5$, a solution is found
-- For some $n >= 5$, the algorithm gets stuck (we have seen an example) $=>$ perform local search
-
-
-#align(right + bottom, image("plot.svg", height: 60%))
-
-
-== Justification for Algorithm Selection
-
-The problem definition states that we are working with a "body" scanner
-- Matrix property: Most `FULL` cells are located next to each other
-- Our algorithm uses this property
-$=>$ Most inputs can be solved in sub-exponential time
 
 
 == Demo: Chunk Inputs
 
 #live_demo()
 
+== Algorithm Justification
+
+*Experiment*:
+1. Generate 10000 random inputs of dimension $(10 times 15)$
+2. Run `scanner.py`: Abort after $t_max = 0.01s$
+3. Measure number of timeouts
+
+== Algorithm Justification
+
+*Experiment*:
+1. Generate 10000 random inputs of dimension $(10 times 15)$
+2. Run `scanner.py`: Abort after $t_max = 0.01s$
+3. Measure number of timeouts
+\
+*Results*:
+
+#table(
+  columns: 2,
+  align: center,
+  [matrix type],[timeout-rate],
+  [random],[99.69%],
+  [chunk],[1.47%]
+)
+
+== Algorithm Justification
+
+*Experiment*:
+1. Generate 10000 random inputs of dimension $(10 times 15)$
+2. Run `scanner.py`: Abort after $t_max = 0.01s$
+3. Measure number of timeouts
+\
+*Results*:
+
+#table(
+  columns: 2,
+  align: center,
+  [matrix type],[timeout-rate],
+  [random],[99.69%],
+  [chunk],[1.47%]
+)
+\
+$=>$ Most inputs can be solved in sub-exponential time!
+
 
 == Summary
 
-#table(
-  stroke: 0pt,
+#grid(
+  stroke: none,
   columns: (30%, 70%),
   align: left + horizon,
   [
