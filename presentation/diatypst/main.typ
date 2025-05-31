@@ -753,14 +753,14 @@ Answer: We get stuck $=>$ perform local search
 == Algorithm Justification
 
 *Experiment*:
-1. Generate 10000 random inputs of dimension $(10 times 15)$
+1. Generate 10000 inputs of dimension $(10 times 15)$
 2. Run `scanner.py`: Abort after $t_max = 0.01s$
 3. Measure number of timeouts
 
 == Algorithm Justification
 
 *Experiment*:
-1. Generate 10000 random inputs of dimension $(10 times 15)$
+1. Generate 10000 inputs of dimension $(10 times 15)$
 2. Run `scanner.py`: Abort after $t_max = 0.01s$
 3. Measure number of timeouts
 \
@@ -777,7 +777,7 @@ Answer: We get stuck $=>$ perform local search
 == Algorithm Justification
 
 *Experiment*:
-1. Generate 10000 random inputs of dimension $(10 times 15)$
+1. Generate 10000 inputs of dimension $(10 times 15)$
 2. Run `scanner.py`: Abort after $t_max = 0.01s$
 3. Measure number of timeouts
 \
