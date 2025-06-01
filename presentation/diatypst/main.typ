@@ -31,7 +31,7 @@
   align(center + horizon, image("matrix-laptop.drawio.svg", height: 50%))
 }
 
-== About questions
+== About Questions
 
 - Please ask questions if you do not understand an important aspect
 - Otherwise, please save your questions for the discussion after the presentation
@@ -70,7 +70,7 @@
 
 #align(center, "But what is our input?")
 
-== Getting the input
+== Getting the Input
 
 #dual_matrix(
   "matrix-Matrix Horiz Numbers.drawio.svg",
@@ -80,7 +80,7 @@
   ],
 )
 
-== Getting the input
+== Getting the Input
 
 #dual_matrix(
   "matrix-Matrix DiagLR Numbers.drawio.svg",
@@ -91,7 +91,7 @@
   ],
 )
 
-== Getting the input
+== Getting the Input
 
 #dual_matrix(
   "matrix-Matrix Vert Numbers.drawio.svg",
@@ -103,7 +103,7 @@
   ],
 )
 
-== Getting the input
+== Getting the Input
 
 #dual_matrix(
   "matrix-Matrix DiagRL Numbers.drawio.svg",
@@ -116,7 +116,7 @@
   ],
 )
 
-== Getting the input
+== Getting the Input
 
 #grid(
   columns: (30%, 40%, 30%),
@@ -492,7 +492,7 @@
 //   ],
 // )
 
-== Fill known cells
+== Fill Known Cells
 
 ```Python
 def compare_and_fill(sensor_data_point, arr):
@@ -535,13 +535,13 @@ while(not is_done()):
                 compare_and_fill(sensor_data_diagonal_rl[i], diag_rl[i])
 ```
 
-== Are we done?
+== Are We Done?
 
 - Does `compare_and_fill` always find a solution?
 - What if there is no solution?
 - What if there are multiple solutions?
 
-== Are we done?
+== Are We Done?
 
 - Does `compare_and_fill` always find a solution?
 - What if there is no solution?
@@ -568,7 +568,7 @@ Let's first answer a different question:
 )
 #align(center, "All input_datas-entries are zero")
 
-== Invalid state
+== Invalid State
 
 #dual_matrix(
   "matrix-filled.svg",
@@ -608,7 +608,7 @@ def is_done():
 
 #live_demo()
 
-== Multiple solutions
+== Multiple Solutions
 
 - We assign `EMPTY` or `FULL` *only if* we know a state for certain
 - $=>$ with `compare_and_fill`, we can only detect *single* solutions
@@ -675,7 +675,7 @@ Answer: We get stuck $=>$ perform local search
 - Worst case: Local search from the beginning
 - Worst case time complexity: $cal(O)(2^(n dot m))$
 
-== Time Complexity: Using matrix property
+== Time Complexity: Using Matrix Property
 
 - Problem Definition: *Body* Scanner
 - $=>$ Matrix property: Most `FULL` cells are neighbored
@@ -695,7 +695,7 @@ Answer: We get stuck $=>$ perform local search
       . . . . . . . . . . . . . . .",
 )
 
-== Time Complexity: Using matrix property
+== Time Complexity: Using Matrix Property
 
 - Problem Definition: *Body* Scanner
 - $=>$ Matrix property: Most `FULL` cells are neighbored
@@ -715,7 +715,7 @@ Answer: We get stuck $=>$ perform local search
       . . . . . . . . . . # . . . . ",
 )
 
-== Time Complexity: Using matrix property
+== Time Complexity: Using Matrix Property
 
 - Problem Definition: *Body* Scanner
 - $=>$ Matrix property: Most `FULL` cells are neighbored
