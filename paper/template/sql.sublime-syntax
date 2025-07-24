@@ -1,0 +1,24 @@
+%YAML 1.2
+---
+name: sql
+file_extensions: [sql]
+scope: source.sql
+
+contexts:
+  main:
+    - match: \b(SELECT|FROM|WHERE|GROUP|BY|HAVING|WITH|RECURSIVE|UNION|ALL|AS)\b
+      scope: keyword.control.sql
+    - match: '"'
+      push: string
+
+  string:
+    - meta_scope: string.quoted.double.sql
+    - match: \\.
+      scope: constant.character.escape.sql
+    - match: '"'
+      pop: true
+  
+  number: 
+    - meta_scope: string.quoted.double.sql
+    - match: '\b(-)?[0-9.]+\b'
+      scope: constant.numeric.sql
