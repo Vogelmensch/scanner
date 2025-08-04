@@ -13,7 +13,7 @@
 #let acmart(
   // Currently supported formats are:
   //  - acmsmall
-  format: "acmsmall",
+  format: "acmsmall", 
 
   // Title, subtitle, authors, abstract, ACM ccs, keywords
   title: "Title",
@@ -21,7 +21,7 @@
   shorttitle: none,
   authors: (),
   shortauthors: none,
-  abstract: none,
+  abstract: none, 
   ccs: (
     ([Do Not Use This Code], (
         (500, [Generate the Correct Terms for Your Paper]),

@@ -33,17 +33,17 @@
 // this show rule enables line numbering in code blocks
 #show raw.where(block: true): code => {
   show raw.line: line => {
-    text(fill: gray)[#line.number]
+    box(width: .6em, align(right, text(fill: gray)[#line.number]))
     h(1em)
     line.body
   }
   block(
-  fill: silver.lighten(75%),
-  inset: 8pt,
-  radius: 5pt,
-  text(fill: rgb("#222222"), code)
-)
-} 
+    fill: silver.lighten(75%),
+    inset: 8pt,
+    radius: 5pt,
+    text(fill: rgb("#222222"), code)
+  )
+}
 
 #show figure.where(
   kind: table
@@ -65,7 +65,11 @@ While the template provides a solid foundation, it does not take care of everyth
 
 - Line and page breaks: Sometimes Typst may break lines or pages in awkward places such as between a heading and the following paragraph, or in the middle of a code block or figure. These situations often require manual adjustment sometimes by rewriting text to fit appropriate space. Do not us commands like `#pagebreak()` and `#colbreak()` lightly.
 // Without a colbreak() Typst will not split the bullet list (atm we do not know why). So we have to split it manually.
-// This is already a very suboptimal split because the whitespace after this item is clearly visible.
+// The following colbreak tutorial depends on the layout with the fonts
+// #let mainFont = "Linux Libertine O"
+// #let sfFont = "Linux Biolinum O"
+// As the fonts have changed, the layout has changed and the  breaks happen at different points.
+// This is already a very suboptimal split because the whitespace after this item is clearly visible. 
 // #colbreak()
 
 - Overflowing elements: Figures, tables, and code listings that extend into the margins or off the page are unacceptable. 
@@ -99,6 +103,8 @@ Enable line numbers to support referencing and discussions with the show rule in
 Avoid presenting large, uninterrupted blocks of code---split long listings into logical parts or use ellipses to skip unimportant sections. Lastly, include meaningful comments in the code itself to explain non-obvious logic or design choices; this makes the code more accessible. 
 
 Always include a clear and descriptive caption using the `caption` field and put the listing into a floating environment (_e.g._, the `figure` environment). Ensure that code listings are placed near the relevant text. Always reference the listing in your text. A listing that is not referenced will not receive attention from the reader. @my-code-block is now referenced.
+
+If I finished this text now, there would be a lot of white space here. Therefore, I should write some more sentences to fill this space. We sometimes have to adapt our text to create a truly appealing layout. 
 
 #figure(
   placement: bottom, 
