@@ -70,4 +70,33 @@ For each of those directions, the discretized body's depth is measured at all po
 
 Those four arrays make up the encoded slice.
 
+// scanner-cell
+#let scell(x, y, isFull, col: aqua) = node(
+  (x, y),
+  width: 2em,
+  height: 2em,
+  fill: if isFull { col } else { white },
+)
 
+#diagram(
+  debug: true,
+  spacing: (0pt, 0pt),
+  node-stroke: 1pt,
+  node-shape: rect,
+  scell(0, 0, true),
+  scell(0, 1, false),
+  scell(0, 2, false),
+  scell(0, 3, false),
+  scell(1, 0, false),
+  scell(1, 1, false),
+  scell(1, 2, false),
+  scell(1, 3, false),
+  scell(2, 0, false),
+  scell(2, 1, false),
+  scell(2, 2, false),
+  scell(2, 3, false),
+  scell(3, 0, false),
+  scell(3, 1, false),
+  scell(3, 2, false),
+  scell(3, 3, false),
+)
