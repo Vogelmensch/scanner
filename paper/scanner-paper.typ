@@ -71,3 +71,32 @@ For each of those directions, the discretized body's depth is measured at all po
 Those four arrays make up the encoded slice.
 
 
+= Reconstructing a slice
+
+We are given two integer-arrays of lengths $m$ and $n$, and two integer-arrays of lengths $m + n + 1$, all representing the depth of the object in the four possible directions. We want to reconstruct the discretized image from this data only. In this chapter, we explain the algorithmic approach we found to be most effective.
+
+\<say what is being done in this chapter lol. Like that we build the solution bottom up.\>
+
+== Naive approach: Local Search
+
+\<Write about the standard local search that is also being used in the algorithm.\>
+
+== Exploiting the chunk property
+
+\<Explain the chunk property and how to use exploit it\>
+
+== Termination conditions
+
+\<The conditions that can be met to find out that we are done\>
+
+== Putting it together?
+
+\<How all parts go together. And find a better title.\>
+
+
+= Analysis
+
+#figure(
+  image("kowalski.jpg"),
+)
+
