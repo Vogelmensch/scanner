@@ -75,7 +75,10 @@ Those four arrays make up the encoded slice.
 
 We are given two integer-arrays of lengths $m$ and $n$, and two integer-arrays of lengths $m + n + 1$, all representing the depth of the object in the four possible directions. We want to reconstruct the discretized image from this data only. In this chapter, we explain the algorithmic approach we found to be most effective.
 
-\<say what is being done in this chapter lol. Like that we build the solution bottom up.\>
+\<say what is being done in this chapter lol. Like that we build the solution bottom up.
+- Introduce terminology: Matrix, Cells-Values `FULL`, `EMPTY` and `UNASSIGNED`
+- Dimensionality of the matrix from the input length
+\>
 
 == Naive Local Search
 
@@ -94,6 +97,35 @@ From the chunk property follows that some sub-arrays (verticals, horizontals or 
 
 On the other hand, from the chunk property follows that some sub-arrays may be completely filled with `FULL`-values. The respective depth for this sub-array must then be equal to the length of the sub-array. Searching for values of maximal depth in the input thus leads to complete knowledge of all values in the respective sub-array as well.
 
+@compare-and-fill shows the code implementing `compare_and_fill`, the function which fills all cells whose state we can derive logically by the chunk property. Its parameters are 
+- `sensor_data_point`, a single depth-value from the input
+- `arr`, the corresponding sub-array of the matrix.
+The function does exactly what has been described above: if `sensor_data_point` equals zero, it assigns all unassigned values of `arr` to `EMPTY`. If `sensor_data_point` equals the number of unassigned values of `arr`, it assigns all those values to `FULL`.
+
+TODO: update_sensor_data 
+
+
+#figure(
+  caption: [Using the chunk property],
+  placement: top,
+  ```Python
+  def compare_and_fill(sensor_data_point, arr):
+      n_of_unassigned = n_of_unassigned(arr)
+
+      if sensor_data_point == 0:
+          for cell in arr:
+              if cell == UNASSIGNED:
+                  cell = EMPTY
+
+      elif sensor_data_point == n_of_unassigned:
+          for cell in arr:
+              if cell == UNASSIGNED:
+                  cell = FULL
+                  update_sensor_data(cell.x, cell.y)
+
+  ```
+) <compare-and-fill>
+
 
 == Termination conditions
 
@@ -105,10 +137,6 @@ On the other hand, from the chunk property follows that some sub-arrays may be c
 
 
 = Analysis
-
-#figure(
-  image("kowalski.jpg"),
-)
 
 
 = Further stuff
