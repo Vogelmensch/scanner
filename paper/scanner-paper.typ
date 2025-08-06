@@ -77,13 +77,23 @@ We are given two integer-arrays of lengths $m$ and $n$, and two integer-arrays o
 
 \<say what is being done in this chapter lol. Like that we build the solution bottom up.\>
 
-== Naive approach: Local Search
+== Naive Local Search
 
-\<Write about the standard local search that is also being used in the algorithm.\>
+The dimension of the resulting matrix is known from the lengths of the horizontal and vertical input arrays. The possible values to fill the matrix with are also known (0 and 1). Thus, we can simply try out all possible solutions, calculate the depth of the resulting object at the four given directions, and compare those to the input arrays.
+
+This approach is obviously not optimal, as it has exponential time complexity. However, we will need to incorporate local search into our solution to guarantee completeness, as we will see later.
+
 
 == Exploiting the chunk property
 
-\<Explain the chunk property and how to use exploit it\>
+Our goal is to reduce the search space of local search such that the slice can be reconstructed in sub-exponential time. To achieve this goal, we exploit a property our resulting matrices have. We call this the chunk property.
+
+We know that we are recreating images of two-dimensional bodies. The term "body" is interpreted as: Most of the `FULL`-valued cells of the matrix are located next to each. What we do not expect, for example, is a noisy image, where the value of a cell is decided randomly.
+
+From the chunk property follows that some sub-arrays (verticals, horizontals or diagonals) of the matrix may be completely filled with `EMPTY`-values. The respective depth for this sub-array must then be zero. Searching for zeros in the input thus leads to complete knowledge of all values in the respective sub-array.
+
+On the other hand, from the chunk property follows that some sub-arrays may be completely filled with `FULL`-values. The respective depth for this sub-array must then be equal to the length of the sub-array. Searching for values of maximal depth in the input thus leads to complete knowledge of all values in the respective sub-array as well.
+
 
 == Termination conditions
 
@@ -100,3 +110,7 @@ We are given two integer-arrays of lengths $m$ and $n$, and two integer-arrays o
   image("kowalski.jpg"),
 )
 
+
+= Further stuff
+
+- local search algorithms: maybe faster, but cannot find double solutions or no solution
