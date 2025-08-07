@@ -97,17 +97,17 @@ From the chunk property follows that some sub-arrays (verticals, horizontals or 
 
 On the other hand, from the chunk property follows that some sub-arrays may be completely filled with `FULL`-values. The respective depth for this sub-array must then be equal to the length of the sub-array. Searching for values of maximal depth in the input thus leads to complete knowledge of all values in the respective sub-array as well.
 
-@compare-and-fill shows the code implementing `compare_and_fill`, the function which fills all cells whose state we can derive logically by the chunk property. Its parameters are 
+@compare-and-fill shows the code implementing `compare_and_fill`, the function which fills all cells whose state we can derive logically by the chunk property. Its parameters are
 - `sensor_data_point`, a single depth-value from the input
 - `arr`, the corresponding sub-array of the matrix.
 The function does exactly what has been described above: if `sensor_data_point` equals zero, it assigns all unassigned values of `arr` to `EMPTY`. If `sensor_data_point` equals the number of unassigned values of `arr`, it assigns all those values to `FULL`.
 
-TODO: update_sensor_data 
+As any cell belongs to exactly four sub-arrays (one for each direction), on assignment of `FULL` to one cell, each depth-value for all of those four sub-arrays need to be updated. This is what the function call `update_sensor_data` in line 13 does.
 
 
 #figure(
   caption: [Using the chunk property],
-  placement: top,
+  //placement: top,
   ```Python
   def compare_and_fill(sensor_data_point, arr):
       n_of_unassigned = n_of_unassigned(arr)
@@ -121,15 +121,61 @@ TODO: update_sensor_data
           for cell in arr:
               if cell == UNASSIGNED:
                   cell = FULL
-                  update_sensor_data(cell.x, cell.y)
-
-  ```
+                  update_sensor_data(cell)
+  ```,
 ) <compare-and-fill>
 
 
-== Termination conditions
+== Iterate until we're done
 
-\<The conditions that can be met to find out that we are done\>
+How do we know whether we found a valid solution? Consider the call to `update_sensor_data` in @compare-and-fill. With this call, all relevant input values are being updated after an assignment of `FULL` to a cell. Thus, when a valid solution has been found, the entire input has to be zero. This is the exact condition we need to check in order to find a valid assignment. If, at one point, all cell-entries have been assigned to `FULL` or `EMPTY`, and simultaneously, not all inputs are zero, then the assignment that has been found is invalid.
+
+To solve the problem, all we have to do now is applying `compare_and_fill` to all pairs of depths and sub-arrays iteratively until we found a solution, see @fill-loop. However, we are not guaranteed to find a solution just yet. This is due to the fact that `compare_and_fill` does not guarantee to fill out all cells. At some point during the iteration, we may get stuck.
+
+This is where we introduce back our local search approach. Should we, at some point during the execution of @fill-loop, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant function. TODO: describe the function.
+
+
+#figure(
+  caption: [Applying `compare_and_fill`],
+  //placement: top,
+  ```Python
+  while(not is_done()):
+              diag_lr = get_diagonal_lr(matrix)
+              diag_rl = get_diagonal_rl(matrix)
+
+              for i in range(height):
+                  compare_and_fill(sensor_data_horizontal[i], matrix[i,:])
+              for i in range(height + width - 1):
+                  compare_and_fill(sensor_data_diagonal_lr[i], diag_lr[i])
+              for i in range(width):
+                  compare_and_fill(sensor_data_vertical[i], matrix[:,i])
+              for i in range(height + width - 1):
+                  compare_and_fill(sensor_data_diagonal_rl[i], diag_rl[i])
+  ```,
+) <fill-loop>
+
+
+#figure(
+  caption: [Local Search],
+  ```Python
+  # value is either FULL or EMPTY
+  def search_in_branch(idx, value, matrix, sensor_data):
+          # save old data
+          old_matrix = matrix.copy()
+          old_sensor_data = sensor_data.copy()
+
+          # assign variable
+          matrix[idx] = value
+          if value == FULL:
+              update_sensor_data(idx[1], idx[0])
+          fill_loop()
+
+          # re-assign old data
+          matrix = old_matrix
+          sensor_data = old_sensor_data
+  ```,
+) <search>
+
 
 == Putting it together?
 
