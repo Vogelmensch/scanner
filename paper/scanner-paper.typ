@@ -53,6 +53,54 @@
 #show link: set text(fill: rgb(165, 30, 55))
 
 
+// scanner-cell
+#let scell(x, y, isFull, col: aqua) = node(
+  (x, y),
+  width: 2em,
+  height: 2em,
+  shape: rect,
+  stroke: 1pt,
+  fill: if isFull { col } else { white },
+  snap: false,
+)
+
+// scanner-edge
+#let sedge(x0, y0, x1, y1) = edge(
+  (x0, y0),
+  (x1, y1),
+  "->",
+  layer: 1,
+  floating: true,
+  stroke: (paint: red, thickness: 0.7pt),
+)
+
+// basic matrix
+#let smatrix(args) = diagram(
+  debug: false,
+  spacing: (0pt, 0pt),
+
+  // cells
+  scell(0, 0, false),
+  scell(0, 1, false),
+  scell(0, 2, true),
+  scell(0, 3, true),
+  scell(1, 0, true),
+  scell(1, 1, true),
+  scell(1, 2, true),
+  scell(1, 3, true),
+  scell(2, 0, true),
+  scell(2, 1, true),
+  scell(2, 2, true),
+  scell(2, 3, false),
+  scell(3, 0, false),
+  scell(3, 1, false),
+  scell(3, 2, false),
+  scell(3, 3, false),
+
+  args,
+)
+
+
 = Encoding a 3d body
 
 To understand the scanner-algorithm, we must first understand the semantics of the code we are solving. In this section, we start with a three-dimensional body and encode it step by step, to end up with a set of integer-arrays.
@@ -69,6 +117,83 @@ Step three: The grid of cells is now being measured for its depth along four dir
 For each of those directions, the discretized body's depth is measured at all possible locations. For a grid of dimension $h times w$, this yields four arrays with $h$, $h + w + 1$, $w$, and $h + w + 1$ entries respectively.
 
 Those four arrays make up the encoded slice.
+
+
+#smatrix(none)
+
+#smatrix((
+  // left annotations
+  node((-1, 0), [2]),
+  node((-1, 1), [2]),
+  node((-1, 2), [3]),
+  node((-1, 3), [2]),
+  sedge(-1, 0, 4, 0),
+  sedge(-1, 1, 4, 1),
+  sedge(-1, 2, 4, 2),
+  sedge(-1, 3, 4, 3),
+  // invisible nodes for equal borders
+  node((4, 4), " "),
+  node((4, -1), " "),
+))
+
+#smatrix((
+  // bottom annotations
+  node((0, 4), [2]),
+  node((1, 4), [4]),
+  node((2, 4), [3]),
+  node((3, 4), [0]),
+  sedge(0, 4, 0, -1),
+  sedge(1, 4, 1, -1),
+  sedge(2, 4, 2, -1),
+  sedge(3, 4, 3, -1),
+  // invisible nodes for equal borders
+  node((-1, 4), " "),
+  node((4, -1), " "),
+))
+
+#let diag_off = 0.25
+
+#smatrix((
+  // diagonal annotations
+  node((-1, 1), [0]),
+  node((-1, 2), [1]),
+  node((-1, 3), [3]),
+  node((-1, 4), [3]),
+  node((0, 4), [2]),
+  node((1, 4), [0]),
+  node((2, 4), [0]),
+  sedge(-1, 1, 1 - diag_off, -1 + diag_off),
+  sedge(-1, 2, 2 - diag_off, -1 + diag_off),
+  sedge(-1, 3, 3 - diag_off, -1 + diag_off),
+  sedge(-1, 4, 4 - diag_off, -1 + diag_off),
+  sedge(0, 4, 4 - diag_off, 0 + diag_off),
+  sedge(1, 4, 4 - diag_off, 1 + diag_off),
+  sedge(2, 4, 4 - diag_off, 2 + diag_off),
+  // invisible nodes for equal borders
+  node((0, -1), " "),
+  node((4, 4), " "),
+))
+
+#smatrix((
+  // diagonal annotations
+  node((1, 4), [1]),
+  node((2, 4), [2]),
+  node((3, 4), [1]),
+  node((4, 4), [2]),
+  node((4, 3), [2]),
+  node((4, 2), [1]),
+  node((4, 1), [0]),
+  sedge(1, 4, -1 + diag_off, 2 + diag_off),
+  sedge(2, 4, -1 + diag_off, 1 + diag_off),
+  sedge(3, 4, -1 + diag_off, 0 + diag_off),
+  sedge(4, 4, -1 + diag_off, -1 + diag_off),
+  sedge(4, 3, 0 + diag_off, -1 + diag_off),
+  sedge(4, 2, 1 + diag_off, -1 + diag_off),
+  sedge(4, 1, 2 + diag_off, -1 + diag_off),
+  // invisible nodes for equal borders
+  node((-1, 4), " "),
+  node((4, -1), " "),
+))
 
 
 = Reconstructing a slice
@@ -184,66 +309,4 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 
 - local search algorithms: maybe faster, but cannot find double solutions or no solution
 
-// scanner-cell
-#let scell(x, y, isFull, col: aqua) = node(
-  (x, y),
-  width: 2em,
-  height: 2em,
-  shape: rect,
-  stroke: 1pt,
-  fill: if isFull { col } else { white },
-  snap: false,
-)
 
-// scanner-edge
-#let sedge(x0, y0, x1, y1) = edge(
-  (x0, y0),
-  (x1, y1),
-  "->",
-  layer: 1,
-  floating: true,
-  stroke: (paint: red, thickness: 1pt),
-)
-
-
-#diagram(
-  debug: true,
-  spacing: (0pt, 0pt),
-
-  // left annotations
-  node((-1, 0), [2]),
-  node((-1, 1), [2]),
-  node((-1, 2), [3]),
-  node((-1, 3), [2]),
-
-  // bottom annotations
-  node((0, 4), [2]),
-  node((1, 4), [4]),
-  node((2, 4), [3]),
-  node((3, 4), [0]),
-
-  // cells
-  scell(0, 0, false),
-  scell(0, 1, false),
-  scell(0, 2, true),
-  scell(0, 3, true),
-  scell(1, 0, true),
-  scell(1, 1, true),
-  scell(1, 2, true),
-  scell(1, 3, true),
-  scell(2, 0, true),
-  scell(2, 1, true),
-  scell(2, 2, true),
-  scell(2, 3, false),
-  scell(3, 0, false),
-  scell(3, 1, false),
-  scell(3, 2, false),
-  scell(3, 3, false),
-
-  // invisible nodes to enable coordinates for the edges
-  node((4, 0), " "),
-  node((0, -1), " "),
-
-  // arrows
-  sedge(0, 3, 3, 0),
-)
