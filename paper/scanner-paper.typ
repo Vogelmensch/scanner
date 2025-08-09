@@ -100,28 +100,7 @@
   args,
 )
 
-
-= Encoding a 3d body
-
-To understand the scanner-algorithm, we must first understand the semantics of the code we are solving. In this section, we start with a three-dimensional body and encode it step by step, to end up with a set of integer-arrays.
-
-Step one: Along the vertical axis, the body is divided into a finite set of two-dimensional slices. Each slice is viewed as constant in depth along the vertical axis. We then encode every slice independently of the others. All subsequent steps are applied to each slice individually. For the rest of the paper, we focus on one slice only for understandability.
-
-Step two: The slice is discretized as a grid of $h times w$ cells. A cell's state is binary-encoded: if the cell contains any portion of the body, the cell is encoded as `FULL`. Otherwise, it is encoded as `EMPTY`.
-
-Step three: The grid of cells is now being measured for its depth along four directions:
-- horizontal
-- first diagonal (from bottom left to top right)
-- vertical, and
-- second diagonal (from bottom right to top left).
-For each of those directions, the discretized body's depth is measured at all possible locations. For a grid of dimension $h times w$, this yields four arrays with $h$, $h + w + 1$, $w$, and $h + w + 1$ entries respectively.
-
-Those four arrays make up the encoded slice.
-
-
-#smatrix(none)
-
-#smatrix((
+#let smatrix_horizontal = smatrix((
   // left annotations
   node((-1, 0), [2]),
   node((-1, 1), [2]),
@@ -136,7 +115,7 @@ Those four arrays make up the encoded slice.
   node((4, -1), " "),
 ))
 
-#smatrix((
+#let smatrix_vertical = smatrix((
   // bottom annotations
   node((0, 4), [2]),
   node((1, 4), [4]),
@@ -153,7 +132,7 @@ Those four arrays make up the encoded slice.
 
 #let diag_off = 0.25
 
-#smatrix((
+#let smatrix_diag_lr = smatrix((
   // diagonal annotations
   node((-1, 1), [0]),
   node((-1, 2), [1]),
@@ -174,7 +153,7 @@ Those four arrays make up the encoded slice.
   node((4, 4), " "),
 ))
 
-#smatrix((
+#let smatrix_diag_rl = smatrix((
   // diagonal annotations
   node((1, 4), [1]),
   node((2, 4), [2]),
@@ -194,6 +173,48 @@ Those four arrays make up the encoded slice.
   node((-1, 4), " "),
   node((4, -1), " "),
 ))
+
+
+= Encoding a 3d body
+
+To understand the scanner-algorithm, we must first understand the semantics of the code we are solving. In this section, we start with a three-dimensional body and encode it step by step, to end up with a set of integer-arrays.
+
+Step one: Along the vertical axis, the body is divided into a finite set of two-dimensional slices. Each slice is viewed as constant in depth along the vertical axis. We then encode every slice independently of the others. All subsequent steps are applied to each slice individually. For the rest of the paper, we focus on one slice only for understandability.
+
+Step two: The slice is discretized as a grid of $h times w$ cells. A cell's state is binary-encoded: if the cell contains any portion of the body, the cell is encoded as `FULL`. Otherwise, it is encoded as `EMPTY`.
+
+Step three: The grid of cells is now being measured for its depth along four directions. See @scanning for a visualization. The directions are:
+- horizontal
+- first diagonal (from bottom left to top right)
+- vertical, and
+- second diagonal (from bottom right to top left).
+For each of those directions, the discretized body's depth is measured at all possible locations. For a grid of dimension $h times w$, this yields four arrays with $h$, $h + w + 1$, $w$, and $h + w + 1$ entries respectively. For our example, the resulting arrays are shown in @encoded. Those four arrays make up the encoded slice.
+
+
+#smatrix(none)
+
+
+
+#figure(
+  caption: [Encoding the object by scanning its depth],
+  grid(
+    rows: (auto, auto),
+    columns: (auto, auto),
+    smatrix_horizontal, smatrix_vertical,
+    smatrix_diag_lr, smatrix_diag_rl,
+  ),
+) <scanning>
+
+
+#figure(
+  caption: [Arrays encoding the slice],
+  ```Python
+  [2, 2, 3, 2], # horizontal
+  [2, 4, 3, 0], # vertical
+  [0, 1, 3, 3, 2, 0, 0], #left-right-diagonals
+  [1, 2, 1, 2, 2, 1, 0] # right-left-diagonals
+  ```,
+) <encoded>
 
 
 = Reconstructing a slice
