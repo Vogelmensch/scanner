@@ -53,8 +53,11 @@
 #show link: set text(fill: rgb(165, 30, 55))
 
 
+// filled-cells color
+#let FULL_COLOR = aqua
+
 // scanner-cell
-#let scell(x, y, isFull, col: aqua) = node(
+#let scell(x, y, isFull, col: FULL_COLOR) = node(
   (x, y),
   width: 2em,
   height: 2em,
@@ -72,6 +75,57 @@
   layer: 1,
   floating: true,
   stroke: (paint: red, thickness: 0.7pt),
+)
+
+#let smatrix_empty() = diagram(
+  debug: false,
+  spacing: (0pt, 0pt),
+
+  // cells
+  scell(0, 0, false),
+  scell(0, 1, false),
+  scell(0, 2, false),
+  scell(0, 3, false),
+  scell(1, 0, false),
+  scell(1, 1, false),
+  scell(1, 2, false),
+  scell(1, 3, false),
+  scell(2, 0, false),
+  scell(2, 1, false),
+  scell(2, 2, false),
+  scell(2, 3, false),
+  scell(3, 0, false),
+  scell(3, 1, false),
+  scell(3, 2, false),
+  scell(3, 3, false),
+)
+
+#let smatrix_with_object() = diagram(
+  debug: false,
+  spacing: (0pt, 0pt),
+
+  // cells
+  scell(0, 0, false),
+  scell(0, 1, false),
+  scell(0, 2, false),
+  scell(0, 3, false),
+  scell(1, 0, false),
+  scell(1, 1, false),
+  scell(1, 2, false),
+  scell(1, 3, false),
+  scell(2, 0, false),
+  scell(2, 1, false),
+  scell(2, 2, false),
+  scell(2, 3, false),
+  scell(3, 0, false),
+  scell(3, 1, false),
+  scell(3, 2, false),
+  scell(3, 3, false),
+
+  // object
+  node((0.75, 2.25), radius: 1em, shape: circle, layer: 1, fill: FULL_COLOR),
+  node((1.5, 1.5), radius: 1.5em, shape: circle, layer: 1, fill: FULL_COLOR),
+  node((1.5, 0.5), radius: 1em, shape: circle, layer: 1, fill: FULL_COLOR),
 )
 
 // basic matrix
@@ -181,7 +235,7 @@ To understand the scanner-algorithm, we must first understand the semantics of t
 
 Step one: Along the vertical axis, the body is divided into a finite set of two-dimensional slices. Each slice is viewed as constant in depth along the vertical axis. We then encode every slice independently of the others. All subsequent steps are applied to each slice individually. For the rest of the paper, we focus on one slice only for understandability.
 
-Step two: The slice is discretized as a grid of $h times w$ cells. A cell's state is binary-encoded: if the cell contains any portion of the body, the cell is encoded as `FULL`. Otherwise, it is encoded as `EMPTY`.
+Step two: The slice is discretized as a grid of $h times w$ cells. A cell's state is binary-encoded: if the cell contains any portion of the body, the cell is encoded as `FULL`. Otherwise, it is encoded as `EMPTY`. See @discretization.
 
 Step three: The grid of cells is now being measured for its depth along four directions. See @scanning for a visualization. The directions are:
 - horizontal
@@ -191,8 +245,15 @@ Step three: The grid of cells is now being measured for its depth along four dir
 For each of those directions, the discretized body's depth is measured at all possible locations. For a grid of dimension $h times w$, this yields four arrays with $h$, $h + w + 1$, $w$, and $h + w + 1$ entries respectively. For our example, the resulting arrays are shown in @encoded. Those four arrays make up the encoded slice.
 
 
-#smatrix(none)
-
+#figure(
+  caption: [Discretization of an object],
+  diagram(
+    spacing: 5em,
+    node((0, 0), smatrix_with_object()),
+    node((1, 0), smatrix(none)),
+    edge((0, 0), (1, 0), "->"),
+  ),
+) <discretization>
 
 
 #figure(
