@@ -80,11 +80,22 @@ Those four arrays make up the encoded slice.
   shape: rect,
   stroke: 1pt,
   fill: if isFull { col } else { white },
+  snap: false,
+)
+
+// scanner-edge
+#let sedge(x0, y0, x1, y1) = edge(
+  (x0, y0),
+  (x1, y1),
+  "->",
+  layer: 1,
+  floating: true,
+  stroke: (paint: red, thickness: 1pt),
 )
 
 
 #diagram(
-  debug: false,
+  debug: true,
   spacing: (0pt, 0pt),
 
   // left annotations
@@ -116,4 +127,11 @@ Those four arrays make up the encoded slice.
   scell(3, 1, false),
   scell(3, 2, false),
   scell(3, 3, false),
+
+  // invisible nodes to enable coordinates for the edges
+  node((4, 0), " "),
+  node((0, -1), " "),
+
+  // arrows
+  sedge(0, 3, 3, 0),
 )
