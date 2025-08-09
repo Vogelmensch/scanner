@@ -132,7 +132,10 @@ How do we know whether we found a valid solution? Consider the call to `update_s
 
 To solve the problem, all we have to do now is applying `compare_and_fill` to all pairs of depths and sub-arrays iteratively until we found a solution, see @fill-loop. However, we are not guaranteed to find a solution just yet. This is due to the fact that `compare_and_fill` does not guarantee to fill out all cells. At some point during the iteration, we may get stuck.
 
-This is where we introduce back our local search approach. Should we, at some point during the execution of @fill-loop, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant function. TODO: describe the function.
+This is where we introduce back our local search approach. Should we, at some point during the execution of @fill-loop, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant code: if, at some point during the execution of @fill-loop, the matrix does not change, and there are still `UNASSIGNED` cells left, we assign both values, `EMPTY` and `FULL`, to this cell sequentially. Notice line 10 of @search: As soon as we have to rely on local search, we are not guaranteed that a valid solution is unique. Thus, we have to
+1. Search among all possible assignments of `UNASSIGNED` variables, and
+2. Keep track how many solutions have been found.
+We do not accept multiple solutions, which is why we immediately exit the program as soon as two solutions have been found.
 
 
 #figure(
@@ -140,17 +143,17 @@ This is where we introduce back our local search approach. Should we, at some po
   //placement: top,
   ```Python
   while(not is_done()):
-              diag_lr = get_diagonal_lr(matrix)
-              diag_rl = get_diagonal_rl(matrix)
+    diag_lr = get_diagonal_lr(matrix)
+    diag_rl = get_diagonal_rl(matrix)
 
-              for i in range(height):
-                  compare_and_fill(sensor_data_horizontal[i], matrix[i,:])
-              for i in range(height + width - 1):
-                  compare_and_fill(sensor_data_diagonal_lr[i], diag_lr[i])
-              for i in range(width):
-                  compare_and_fill(sensor_data_vertical[i], matrix[:,i])
-              for i in range(height + width - 1):
-                  compare_and_fill(sensor_data_diagonal_rl[i], diag_rl[i])
+    for i in range(height):
+      compare_and_fill(in_horiz[i], matrix[i,:])
+    for i in range(height + width - 1):
+      compare_and_fill(in_diag_lr[i], diag_lr[i])
+    for i in range(width):
+      compare_and_fill(in_vert[i], matrix[:,i])
+    for i in range(height + width - 1):
+      compare_and_fill(in_diag_rl[i], diag_rl[i])
   ```,
 ) <fill-loop>
 
@@ -158,28 +161,20 @@ This is where we introduce back our local search approach. Should we, at some po
 #figure(
   caption: [Local Search],
   ```Python
-  # value is either FULL or EMPTY
-  def search_in_branch(idx, value, matrix, sensor_data):
-          # save old data
-          old_matrix = matrix.copy()
-          old_sensor_data = sensor_data.copy()
+  # ... inside fill_loop()
+  if not has_change_occured:
+    # indices of unassigned cells
+    indices_of_unassigned = np.argwhere(matrix.cell == UNASSIGNED)
 
-          # assign variable
-          matrix[idx] = value
-          if value == FULL:
-              update_sensor_data(idx[1], idx[0])
-          fill_loop()
-
-          # re-assign old data
-          matrix = old_matrix
-          sensor_data = old_sensor_data
+    for idx in indices_of_unassigned:
+      for assignment in [EMPTY, FULL]:
+        # assign value to matrix[idx]
+        search_in_branch(idx, value, matrix)
+        if solutions_found > 1:
+          # the solution is ambiguous -> leave loop
+          return
   ```,
 ) <search>
-
-
-== Putting it together?
-
-\<How all parts go together. And find a better title.\>
 
 
 = Analysis
