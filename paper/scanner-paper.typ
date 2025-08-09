@@ -183,3 +183,67 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 = Further stuff
 
 - local search algorithms: maybe faster, but cannot find double solutions or no solution
+
+// scanner-cell
+#let scell(x, y, isFull, col: aqua) = node(
+  (x, y),
+  width: 2em,
+  height: 2em,
+  shape: rect,
+  stroke: 1pt,
+  fill: if isFull { col } else { white },
+  snap: false,
+)
+
+// scanner-edge
+#let sedge(x0, y0, x1, y1) = edge(
+  (x0, y0),
+  (x1, y1),
+  "->",
+  layer: 1,
+  floating: true,
+  stroke: (paint: red, thickness: 1pt),
+)
+
+
+#diagram(
+  debug: true,
+  spacing: (0pt, 0pt),
+
+  // left annotations
+  node((-1, 0), [2]),
+  node((-1, 1), [2]),
+  node((-1, 2), [3]),
+  node((-1, 3), [2]),
+
+  // bottom annotations
+  node((0, 4), [2]),
+  node((1, 4), [4]),
+  node((2, 4), [3]),
+  node((3, 4), [0]),
+
+  // cells
+  scell(0, 0, false),
+  scell(0, 1, false),
+  scell(0, 2, true),
+  scell(0, 3, true),
+  scell(1, 0, true),
+  scell(1, 1, true),
+  scell(1, 2, true),
+  scell(1, 3, true),
+  scell(2, 0, true),
+  scell(2, 1, true),
+  scell(2, 2, true),
+  scell(2, 3, false),
+  scell(3, 0, false),
+  scell(3, 1, false),
+  scell(3, 2, false),
+  scell(3, 3, false),
+
+  // invisible nodes to enable coordinates for the edges
+  node((4, 0), " "),
+  node((0, -1), " "),
+
+  // arrows
+  sedge(0, 3, 3, 0),
+)
