@@ -87,11 +87,11 @@ if __name__ == "__main__":
     #     sys.exit()
 
 
-    # n = int(sys.argv[1])
-    # prob = float(sys.argv[2])
+    n = int(sys.argv[1])
+    prob = float(sys.argv[2])
     # print(n)
     # #generate_random_data(n)
     # generate_random_valid_data(n, prob)
-    print(10000)
-    generate_random_valid_data(n=10000, prob=0.4)
-    #generate_chunk(n_matrices=10000, chance=0.2, height=10, width=15)
+    print(n)
+    #generate_random_valid_data(n=10000, prob=0.4)
+    generate_chunk(n_matrices=n, chance=prob, height=10, width=15)
