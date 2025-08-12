@@ -1,12 +1,12 @@
 #!/bin/bash
 
-prob=15
-while [ $prob -le 25 ]
+prob=10
+while [ $prob -le 30 ]
 do
     echo $prob
     python generate_input.py 1000 0.$prob > generated.txt
-    python scanner.py generated.txt -t > result_$prob.txt
+    python scanner.py generated.txt -t > exp_results/result_$prob.txt
     let prob=$prob+1
 done
 
-tail result* -n 3
+tail exp_results/result* -n 3

@@ -228,6 +228,7 @@
   node((4, -1), " "),
 ))
 
+TODO: Write about the ACM task in the beginning.
 
 = Encoding a 3d body
 
@@ -386,8 +387,106 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 
 = Analysis
 
+We have seen in Chapter TODO that we need to resort to local search algorithms for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$ for obvious reasons. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without having to resort to local search.
 
-= Further stuff
+We approached this question experimentally. This chapter describes this experiment (TODO: genauer wenn Kapitel fertig)
+
+
+== Setup
+
+1. Modify `scanner.py` to terminate if it has not found a solution after $T_(max)$ seconds.
+2. Generate $N=1000$ inputs that satisfy the chunk-property using @generate_chunk.
+3. Apply `scanner.py` to each input and count the number of terminations.
+4. Repeat step 2 and 3 with variating values for `chance` in @generate_chunk to find the worst-case result.
+
+For point 1, the exact value of $T_max$ depends on the machine that is being used. We have found most inputs to be solvable in $~0.07s$. We thus chose $T_max = 0.1s$ as an appropriate threshold value.
+
+To generate an input, we developed `generate_chunk(chance, height, width)`, see @generate_chunk. The function iterates over every cell and turns it to a `FULL` cell with a probability of `chance`. This is repeated `min(height, width)` times. The value of `chance` is variable, as we repeat the experiment for various values of $"chance" in [0.15, 0.16, ..., 0.25]$ to find the worst-case result. We furthermore chose `height = 10` and `width = 15`, as those are the values used in the original problem description.
+
+
+
+#figure(
+  caption: [Generating chunk data],
+  ```Python
+def generate_chunk(chance, height, width):
+  chunk_matrix = all_empty(height, width)
+
+  # make middle element 1
+  chunk_matrix[int(height/2), int(width/2)] = 1
+
+  for _ in range(min(height, width)):
+    for cell in chunk_matrix:
+      if one_neighbor_of(cell) == FULL and random.random() < chance
+        cell = FULL
+      
+  matrix_to_data(chunk_matrix, height, width)
+  ```
+) <generate_chunk>
+
+
+
+== Results
+
+#figure(
+  caption: [],
+  table(
+    columns: 4,
+    align: (center, center,),
+    inset: 5pt,
+    stroke: none,
+    gutter: 0.5em,
+
+    // Top rule
+  table.hline(stroke: 1.25pt),
+
+    [`chance` in %],[timeout-rate in %],
+    [`chance` in %],[timeout-rate in %],
+    
+    // Mid rule
+    table.hline(stroke: 0.75pt),
+
+    [0.10],[0.2],
+    table.vline(),
+    [0.11],[0.2],
+    [0.12],[0.0],
+    [0.13],[0.3],
+    [0.14],[0.7],
+    [0.15],[1.0],
+    [0.16],[0.9],
+    [0.17],[1.2],
+    [0.18],[0.8],
+    [0.19],[1.1],
+    [0.20],[1.2],
+    [0.21],[1.0],
+    [0.22],[1.4],
+    [0.23],[0.9],
+    [0.24],[1.1],
+    [0.25],[0.5],
+    [0.26],[0.4],
+    [0.27],[0.7],
+    [0.28],[0.1],
+    [0.29],[0.2],
+    [0.30],[0.1],
+
+
+  // Bottom rule
+  table.hline(stroke: 1.25pt),
+  )
+) <exp-result-table>
+
+#figure(
+  caption: [],
+  image("plot.svg")
+) <exp-result-plot>
+
+
+
+== Interpretation
+
+Our experiment shows that the timeout-rate $t$ does not exceed $t = 1.5 %$. From this we can conclude that $~98.5 %$ of inputs can be solved in sub-exponential time.
+
+
+= Future work
 
 - local search algorithms: maybe faster, but cannot find double solutions or no solution
 
