@@ -20,7 +20,7 @@
   },
 
   abstract: [
-    Start with a structured abstract as a tiny text. That should *not* become your final version of an abstract without alteration.
+    ACM releases several programming problems for ICPC every year. Problem "5168 - Scanner" provides the depth of a three-dimensional body as input, and demands the discrete reconstruction of the body as output. Exhaustive search fails to solve the problem in reasonable time. We propose a method that greatly reduces the search space for Exhaustive Search by exploiting a spatial property of the wanted body. Applying this method to randomly generated, valid inputs yields results in sub-exponential time in $~ 98.5 %$ of inputs.
 
     An abstract (for a short paper like yours) should comprise about 100-150~words. Please, write a minimum of 80 and a maximum of 200~words.
   ],
@@ -288,16 +288,16 @@ We are given two integer-arrays of lengths $m$ and $n$, and two integer-arrays o
 - Dimensionality of the matrix from the input length
 \>
 
-== Naive Local Search
+== Exhaustive Search
 
 The dimension of the resulting matrix is known from the lengths of the horizontal and vertical input arrays. The possible values to fill the matrix with are also known (0 and 1). Thus, we can simply try out all possible solutions, calculate the depth of the resulting object at the four given directions, and compare those to the input arrays.
 
-This approach is obviously not optimal, as it has exponential time complexity. However, we will need to incorporate local search into our solution to guarantee completeness, as we will see later.
+This approach is obviously not optimal, as it has exponential time complexity. However, we will need to incorporate exhaustive search into our solution to guarantee completeness, as we will see later.
 
 
 == Exploiting the chunk property
 
-Our goal is to reduce the search space of local search such that the slice can be reconstructed in sub-exponential time. To achieve this goal, we exploit a property our resulting matrices have. We call this the chunk property.
+Our goal is to reduce the search space such that the slice can be reconstructed in sub-exponential time. To achieve this goal, we exploit a property our resulting matrices have. We call this the chunk property.
 
 We know that we are recreating images of two-dimensional bodies. The term "body" is interpreted as: Most of the `FULL`-valued cells of the matrix are located next to each. What we do not expect, for example, is a noisy image, where the value of a cell is decided randomly.
 
@@ -340,7 +340,7 @@ How do we know whether we found a valid solution? Consider the call to `update_s
 
 To solve the problem, all we have to do now is applying `compare_and_fill` to all pairs of depths and sub-arrays iteratively until we found a solution, see @fill-loop. However, we are not guaranteed to find a solution just yet. This is due to the fact that `compare_and_fill` does not guarantee to fill out all cells. At some point during the iteration, we may get stuck.
 
-This is where we introduce back our local search approach. Should we, at some point during the execution of @fill-loop, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant code: if, at some point during the execution of @fill-loop, the matrix does not change, and there are still `UNASSIGNED` cells left, we assign both values, `EMPTY` and `FULL`, to this cell sequentially. Notice line 10 of @search: As soon as we have to rely on local search, we are not guaranteed that a valid solution is unique. Thus, we have to
+This is where we introduce back our exhaustive search approach. Should we, at some point during the execution of @fill-loop, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant code: if, at some point during the execution of @fill-loop, the matrix does not change, and there are still `UNASSIGNED` cells left, we assign both values, `EMPTY` and `FULL`, to this cell sequentially. Notice line 10 of @search: As soon as we have to rely on exhaustive search, we are not guaranteed that a valid solution is unique. Thus, we have to
 1. Search among all possible assignments of `UNASSIGNED` variables, and
 2. Keep track how many solutions have been found.
 We do not accept multiple solutions, which is why we immediately exit the program as soon as two solutions have been found.
@@ -367,7 +367,7 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 
 
 #figure(
-  caption: [Local Search],
+  caption: [Exhaustive Search],
   ```Python
   # ... inside fill_loop()
   if not has_change_occured:
@@ -387,7 +387,7 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 
 = Analysis
 
-We have seen in Chapter TODO that we need to resort to local search algorithms for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$ for obvious reasons. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without having to resort to local search.
+We have seen in Chapter TODO that we need to resort to exhaustive search algorithms for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$ for obvious reasons. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without having to resort to exhaustive search.
 
 We approached this question experimentally. This chapter describes this experiment (TODO: genauer wenn Kapitel fertig)
 
@@ -488,6 +488,4 @@ Our experiment shows that the timeout-rate $t$ does not exceed $t = 1.5 %$. From
 
 = Future work
 
-- local search algorithms: maybe faster, but cannot find double solutions or no solution
-
-
+The search algorithm we used is a simple exhaustive search. We put all work into reducing the search space such that exhaustive search has to be used as few times as possible. To further improve the performance for every possible input, future work may focus on finding better search algorithms. One possibility that has been tried during our research is simulated annealing. However, a thourough implementation was beyond the scope of this research project.
