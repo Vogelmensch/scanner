@@ -1,35 +1,6 @@
 #import "template.typ": *
 #import "@preview/fletcher:0.5.7" as fletcher: diagram, edge, node
 
-#show: acmart.with(
-  format: "acmsmall",
-  // Text in "" is taken literally, while text in [] is "interpreted", e.g., --- is converted to an m-dash
-  title: [Scanner-Paper],
-  subtitle: "A subtitle is purely optional",
-  authors: {
-    (
-      (
-        name: "David Knöpp",
-        email: "david.knoepp@student.uni-tuebingen.de",
-        affiliation: (
-          institution: "University of Tübingen",
-          country: "Germany",
-        ),
-      ),
-    )
-  },
-
-  abstract: [
-    ACM releases several programming problems for ICPC every year. Problem "5168 - Scanner" provides the depth of a three-dimensional body as input, and demands the discrete reconstruction of the body as output. Exhaustive search fails to solve the problem in reasonable time. We propose a method that greatly reduces the search space for Exhaustive Search by exploiting a spatial property of the wanted body. Applying this method to randomly generated, valid inputs yields results in sub-exponential time in $~ 98.5 %$ of inputs.
-
-    An abstract (for a short paper like yours) should comprise about 100-150~words. Please, write a minimum of 80 and a maximum of 200~words.
-  ],
-  ccs: none,
-  keywords: ("Keywords", "To", "Increase", "Discoverability"),
-  copyright: "studentpaper",
-
-  acmYear: 2025,
-)
 
 // this show rule enables line numbering in code blocks
 #show raw.where(block: true): code => {
@@ -228,17 +199,61 @@
   node((4, -1), " "),
 ))
 
-TODO: Write about the ACM task in the beginning.
 
-= Encoding a 3d body
+
+
+#show: acmart.with(
+  format: "acmsmall",
+  // Text in "" is taken literally, while text in [] is "interpreted", e.g., --- is converted to an m-dash
+  title: [No Need for Search to Solve the Scanner],
+  subtitle: "The ICPC Scanner Problem",
+  authors: {
+    (
+      (
+        name: "David Knöpp",
+        email: "david.knoepp@student.uni-tuebingen.de",
+        affiliation: (
+          institution: "University of Tübingen",
+          country: "Germany",
+        ),
+      ),
+    )
+  },
+
+  abstract: [
+    ACM releases several programming problems for ICPC every year. Problem "5168 - Scanner" provides the depth of a three-dimensional body as input, and demands the discrete reconstruction of the body as output. Exhaustive search fails to solve the problem in reasonable time. We propose a method that greatly reduces the search space for Exhaustive Search by exploiting a spatial property of the wanted body. Applying this method to randomly generated, valid inputs allows to fully avoid searching for $~ 98.5 %$ of inputs.
+  ],
+  ccs: none,
+  keywords: ("ICPC", "Scanner", "Search"),
+  copyright: "studentpaper",
+
+  acmYear: 2025,
+)
+
+
+= Introduction <intro>
+
+The Scanner Problem introduces a scenario in which a three-dimensional body has been scanned for its depth. The participants' task is to reconstruct the body from those depth-values alone. We explain the problem in detail in @encoding.
+
+The intuitive solution to this problem is to search through all possible assignments of `FULL` and `EMPTY` for the discretized matrices, through exhaustive or local search. This approach is not ideal for two reasons.
+1. Exhaustive Search has an exponential time complexity, which makes it unusable for bigger matrices (especially the ones features in the original problem description).
+2. Local Search may find solutions, but cannot identify invalid inputs.
+We cannot eliminate the need for search entirely (see @exhaustive). Still, we can view the problem at a different light.
+- The results that we are searching for share a common property, which we call the "chunk-property". The chunk-property can be exploited to assign large groups of cells at once with absolute certainty (see @chunk).
+- Some inputs may have zero or multiple solutions. We found two conditions that allow for handling those kind of inputs early (see @iterate).
+- We performed an exeriment to quantize the number of inputs that can be solved in this way. We generated random, valid data and checked the number of inputs where the program did not time-out, i.e. where it stuck at local search for too long. The results show that we can solve $~ 98.5 %$ of problems in sub-exponential time (see @analysis).
+While we are able to avoid exhaustive search for most inputs, some inputs still require a full search. Thus, further research for better search algorithms is still required.
+
+
+= Encoding a 3d body <encoding>
 
 To understand the scanner-algorithm, we must first understand the semantics of the code we are solving. In this section, we start with a three-dimensional body and encode it step by step, to end up with a set of integer-arrays.
 
-Step one: Along the vertical axis, the body is divided into a finite set of two-dimensional slices. Each slice is viewed as constant in depth along the vertical axis. We then encode every slice independently of the others. All subsequent steps are applied to each slice individually. For the rest of the paper, we focus on one slice only for understandability.
+*Step one*: Along the vertical axis, the body is divided into a finite set of two-dimensional slices. Each slice is viewed as constant in depth along the vertical axis, i.e. having a discrete vertical depth of one. We then encode every slice independently of the others. All subsequent steps are applied to each slice individually. For the rest of the paper, we focus on one slice only for better understandability.
 
-Step two: The slice is discretized as a grid of $h times w$ cells. A cell's state is binary-encoded: if the cell contains any portion of the body, the cell is encoded as `FULL`. Otherwise, it is encoded as `EMPTY`. See @discretization.
+*Step two*: The slice is discretized as a grid of $h times w$ cells. A cell's state is binary-encoded: if the cell contains _any_ portion of the body, the cell is encoded as `FULL`. Otherwise, it is encoded as `EMPTY`. See @discretization.
 
-Step three: The grid of cells is now being measured for its depth along four directions. See @scanning for a visualization. The directions are:
+*Step three*: The grid of cells is now being measured for its depth along four directions. See @scanning for a visualization. The directions are:
 - horizontal
 - first diagonal (from bottom left to top right)
 - vertical, and
@@ -262,8 +277,8 @@ For each of those directions, the discretized body's depth is measured at all po
   grid(
     rows: (auto, auto),
     columns: (auto, auto),
-    smatrix_horizontal, smatrix_vertical,
-    smatrix_diag_lr, smatrix_diag_rl,
+    smatrix_horizontal, smatrix_diag_lr, 
+    smatrix_vertical, smatrix_diag_rl,
   ),
 ) <scanning>
 
@@ -272,14 +287,14 @@ For each of those directions, the discretized body's depth is measured at all po
   caption: [Arrays encoding the slice],
   ```Python
   [2, 2, 3, 2], # horizontal
-  [2, 4, 3, 0], # vertical
   [0, 1, 3, 3, 2, 0, 0], #left-right-diagonals
+  [2, 4, 3, 0], # vertical
   [1, 2, 1, 2, 2, 1, 0] # right-left-diagonals
   ```,
 ) <encoded>
 
 
-= Reconstructing a slice
+= Reconstructing a slice <reconstruct>
 
 We are given two integer-arrays of lengths $m$ and $n$, and two integer-arrays of lengths $m + n + 1$, all representing the depth of the object in the four possible directions. We want to reconstruct the discretized image from this data only. In this chapter, we explain the algorithmic approach we found to be most effective.
 
@@ -288,14 +303,14 @@ We are given two integer-arrays of lengths $m$ and $n$, and two integer-arrays o
 - Dimensionality of the matrix from the input length
 \>
 
-== Exhaustive Search
+== Exhaustive Search <exhaustive>
 
 The dimension of the resulting matrix is known from the lengths of the horizontal and vertical input arrays. The possible values to fill the matrix with are also known (0 and 1). Thus, we can simply try out all possible solutions, calculate the depth of the resulting object at the four given directions, and compare those to the input arrays.
 
 This approach is obviously not optimal, as it has exponential time complexity. However, we will need to incorporate exhaustive search into our solution to guarantee completeness, as we will see later.
 
 
-== Exploiting the chunk property
+== Exploiting the chunk property <chunk>
 
 Our goal is to reduce the search space such that the slice can be reconstructed in sub-exponential time. To achieve this goal, we exploit a property our resulting matrices have. We call this the chunk property.
 
@@ -334,7 +349,7 @@ As any cell belongs to exactly four sub-arrays (one for each direction), on assi
 ) <compare-and-fill>
 
 
-== Iterate until we're done
+== Iterate until we're done <iterate>
 
 How do we know whether we found a valid solution? Consider the call to `update_sensor_data` in @compare-and-fill. With this call, all relevant input values are being updated after an assignment of `FULL` to a cell. Thus, when a valid solution has been found, the entire input has to be zero. This is the exact condition we need to check in order to find a valid assignment. If, at one point, all cell-entries have been assigned to `FULL` or `EMPTY`, and simultaneously, not all inputs are zero, then the assignment that has been found is invalid.
 
@@ -385,14 +400,14 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 ) <search>
 
 
-= Analysis
+= Analysis <analysis>
 
 We have seen in Chapter TODO that we need to resort to exhaustive search algorithms for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$ for obvious reasons. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without having to resort to exhaustive search.
 
 We approached this question experimentally. This chapter describes this experiment (TODO: genauer wenn Kapitel fertig)
 
 
-== Setup
+== Setup <setup>
 
 1. Modify `scanner.py` to terminate if it has not found a solution after $T_(max)$ seconds.
 2. Generate $N=1000$ inputs that satisfy the chunk-property using @generate_chunk.
@@ -425,7 +440,7 @@ def generate_chunk(chance, height, width):
 
 
 
-== Results
+== Results <results>
 
 #figure(
   caption: [],
@@ -481,11 +496,11 @@ def generate_chunk(chance, height, width):
 
 
 
-== Interpretation
+== Interpretation <interpretation>
 
 Our experiment shows that the timeout-rate $t$ does not exceed $t = 1.5 %$. From this we can conclude that $~98.5 %$ of inputs can be solved in sub-exponential time.
 
 
-= Future work
+= Future work <future>
 
-The search algorithm we used is a simple exhaustive search. We put all work into reducing the search space such that exhaustive search has to be used as few times as possible. To further improve the performance for every possible input, future work may focus on finding better search algorithms. One possibility that has been tried during our research is simulated annealing. However, a thourough implementation was beyond the scope of this research project.
+The search algorithm we used is a simple exhaustive search. We put all work into reducing the search space such that exhaustive search has to be used as few times as possible. To further improve the performance for every possible input, future work may focus on finding better search algorithms. One possibility that has been tried during our research is simulated annealing. However, a thorough implementation was beyond the scope of this research project.
