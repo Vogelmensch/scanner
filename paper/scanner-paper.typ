@@ -233,11 +233,11 @@
 
 = Introduction <intro>
 
-The Scanner Problem introduces a scenario in which a three-dimensional body has been scanned for its depth. The participants' task is to reconstruct the body from those depth-values alone. We explain the problem in detail in @encoding.
+The Scanner Problem introduces a scenario in which a three-dimensional body has been scanned for its depth. The task is to reconstruct the body from those depth-values alone. We explain the problem in detail in @encoding.
 
-The intuitive solution to this problem is to search through all possible assignments of `FULL` and `EMPTY` for the discretized matrices, through exhaustive or local search. This approach is not ideal for two reasons.
+The intuitive solution to this problem is to search through all possible assignments discretized matrices, through exhaustive or local search. This approach is not ideal for two reasons.
 1. Exhaustive Search has an exponential time complexity, which makes it unusable for bigger matrices (especially the ones features in the original problem description).
-2. Local Search may find solutions, but cannot identify invalid inputs.
+2. Local Search cannot identify invalid inputs.
 We cannot eliminate the need for search entirely (see @exhaustive). Still, we can view the problem at a different light.
 - The results that we are searching for share a common property, which we call the "chunk-property". The chunk-property can be exploited to assign large groups of cells at once with absolute certainty (see @chunk).
 - Some inputs may have zero or multiple solutions. We found two conditions that allow for handling those kind of inputs early (see @iterate).
@@ -262,6 +262,7 @@ For each of those directions, the discretized body's depth is measured at all po
 
 
 #figure(
+  placement: bottom,
   caption: [Discretization of an object],
   diagram(
     spacing: 5em,
@@ -273,6 +274,7 @@ For each of those directions, the discretized body's depth is measured at all po
 
 
 #figure(
+  placement: bottom,
   caption: [Encoding the object by scanning its depth],
   grid(
     rows: (auto, auto),
@@ -284,6 +286,7 @@ For each of those directions, the discretized body's depth is measured at all po
 
 
 #figure(
+  placement: bottom,
   caption: [Arrays encoding the slice],
   ```Python
   [2, 2, 3, 2], # horizontal
@@ -298,27 +301,23 @@ For each of those directions, the discretized body's depth is measured at all po
 
 We are given two integer-arrays of lengths $m$ and $n$, and two integer-arrays of lengths $m + n + 1$, all representing the depth of the object in the four possible directions. We want to reconstruct the discretized image from this data only. In this chapter, we explain the algorithmic approach we found to be most effective.
 
-\<say what is being done in this chapter lol. Like that we build the solution bottom up.
-- Introduce terminology: Matrix, Cells-Values `FULL`, `EMPTY` and `UNASSIGNED`
-- Dimensionality of the matrix from the input length
-\>
 
 == Exhaustive Search <exhaustive>
 
-The dimension of the resulting matrix is known from the lengths of the horizontal and vertical input arrays. The possible values to fill the matrix with are also known (0 and 1). Thus, we can simply try out all possible solutions, calculate the depth of the resulting object at the four given directions, and compare those to the input arrays.
+The dimension of the resulting matrix is known from the lengths of the horizontal and vertical input arrays. The possible values to fill the matrix with are also known (`EMPTY` and `FULL`). Thus, we can simply try out all possible solutions, calculate the depth of the resulting object at the four given directions, and compare those to the input arrays.
 
 This approach is obviously not optimal, as it has exponential time complexity. However, we will need to incorporate exhaustive search into our solution to guarantee completeness, as we will see later.
 
 
 == Exploiting the chunk property <chunk>
 
-Our goal is to reduce the search space such that the slice can be reconstructed in sub-exponential time. To achieve this goal, we exploit a property our resulting matrices have. We call this the chunk property.
+Our goal is to reduce the search space such that the slice can be reconstructed in sub-exponential time. To achieve this, we exploit a property our resulting matrices have. We call this the chunk property.
 
-We know that we are recreating images of two-dimensional bodies. The term "body" is interpreted as: Most of the `FULL`-valued cells of the matrix are located next to each. What we do not expect, for example, is a noisy image, where the value of a cell is decided randomly.
+We know that we are recreating images of two-dimensional bodies. The term "body" is interpreted as: Most of the `FULL`-valued cells of the matrix are located next to each. What we do not expect, for example, is a noisy image, where the value of each cell is decided independently of its neighbors.
 
 From the chunk property follows that some sub-arrays (verticals, horizontals or diagonals) of the matrix may be completely filled with `EMPTY`-values. The respective depth for this sub-array must then be zero. Searching for zeros in the input thus leads to complete knowledge of all values in the respective sub-array.
 
-On the other hand, from the chunk property follows that some sub-arrays may be completely filled with `FULL`-values. The respective depth for this sub-array must then be equal to the length of the sub-array. Searching for values of maximal depth in the input thus leads to complete knowledge of all values in the respective sub-array as well.
+From the chunk property also follows that some sub-arrays may be completely filled with `FULL`-values. The respective depth for this sub-array must then be equal to the length of the sub-array. Searching for values of maximal depth in the input thus leads to complete knowledge of all values in the respective sub-array as well.
 
 @compare-and-fill shows the code implementing `compare_and_fill`, the function which fills all cells whose state we can derive logically by the chunk property. Its parameters are
 - `sensor_data_point`, a single depth-value from the input
@@ -329,6 +328,7 @@ As any cell belongs to exactly four sub-arrays (one for each direction), on assi
 
 
 #figure(
+  placement: auto,
   caption: [Using the chunk property],
   //placement: top,
   ```Python
@@ -349,7 +349,7 @@ As any cell belongs to exactly four sub-arrays (one for each direction), on assi
 ) <compare-and-fill>
 
 
-== Iterate until we're done <iterate>
+== Exactly one solution <iterate>
 
 How do we know whether we found a valid solution? Consider the call to `update_sensor_data` in @compare-and-fill. With this call, all relevant input values are being updated after an assignment of `FULL` to a cell. Thus, when a valid solution has been found, the entire input has to be zero. This is the exact condition we need to check in order to find a valid assignment. If, at one point, all cell-entries have been assigned to `FULL` or `EMPTY`, and simultaneously, not all inputs are zero, then the assignment that has been found is invalid.
 
@@ -362,6 +362,7 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 
 
 #figure(
+  placement: auto,
   caption: [Applying `compare_and_fill`],
   //placement: top,
   ```Python
@@ -382,6 +383,7 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 
 
 #figure(
+  placement:auto,
   caption: [Exhaustive Search],
   ```Python
   # ... inside fill_loop()
@@ -402,25 +404,26 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 
 = Analysis <analysis>
 
-We have seen in Chapter TODO that we need to resort to exhaustive search algorithms for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$ for obvious reasons. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without having to resort to exhaustive search.
+We have seen in @iterate that we need to resort to exhaustive search algorithms for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$ for obvious reasons. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without having to resort to exhaustive search.
 
-We approached this question experimentally. This chapter describes this experiment (TODO: genauer wenn Kapitel fertig)
+We approached this question experimentally. This chapter describes this experiments setup and presents and discusses its results.
 
 
 == Setup <setup>
 
 1. Modify `scanner.py` to terminate if it has not found a solution after $T_(max)$ seconds.
-2. Generate $N=1000$ inputs that satisfy the chunk-property using @generate_chunk.
+2. Generate $N=1000$ inputs that satisfy the chunk-property using the function `generate_chunk`, see @generate_chunk.
 3. Apply `scanner.py` to each input and count the number of terminations.
-4. Repeat step 2 and 3 with variating values for `chance` in @generate_chunk to find the worst-case result.
+4. Repeat step 2 and 3 with variating values for the parameter `chance` in `generate_chunk` to find the worst-case result.
 
-For point 1, the exact value of $T_max$ depends on the machine that is being used. We have found most inputs to be solvable in $~0.07s$. We thus chose $T_max = 0.1s$ as an appropriate threshold value.
+For point 1, the exact value of $T_max$ depends on the machine that is being used. We have found a great number of inputs to be solvable in $~0.07s$. We thus chose $T_max = 0.1s$ as an appropriate threshold value.
 
 To generate an input, we developed `generate_chunk(chance, height, width)`, see @generate_chunk. The function iterates over every cell and turns it to a `FULL` cell with a probability of `chance`. This is repeated `min(height, width)` times. The value of `chance` is variable, as we repeat the experiment for various values of $"chance" in [0.15, 0.16, ..., 0.25]$ to find the worst-case result. We furthermore chose `height = 10` and `width = 15`, as those are the values used in the original problem description.
 
 
 
 #figure(
+  placement: auto,
   caption: [Generating chunk data],
   ```Python
 def generate_chunk(chance, height, width):
@@ -443,7 +446,8 @@ def generate_chunk(chance, height, width):
 == Results <results>
 
 #figure(
-  caption: [],
+  placement: auto,
+  caption: [Results of the experiment],
   table(
     columns: 4,
     align: (center, center,),
@@ -462,26 +466,26 @@ def generate_chunk(chance, height, width):
 
     [0.10],[0.2],
     table.vline(),
-    [0.11],[0.2],
-    [0.12],[0.0],
-    [0.13],[0.3],
-    [0.14],[0.7],
-    [0.15],[1.0],
-    [0.16],[0.9],
-    [0.17],[1.2],
-    [0.18],[0.8],
-    [0.19],[1.1],
-    [0.20],[1.2],
     [0.21],[1.0],
+    [0.11],[0.2],
     [0.22],[1.4],
+    [0.12],[0.0],
     [0.23],[0.9],
+    [0.13],[0.3],
     [0.24],[1.1],
+    [0.14],[0.7],
     [0.25],[0.5],
+    [0.15],[1.0],
     [0.26],[0.4],
+    [0.16],[0.9],
     [0.27],[0.7],
+    [0.17],[1.2],
     [0.28],[0.1],
+    [0.18],[0.8],
     [0.29],[0.2],
+    [0.19],[1.1],
     [0.30],[0.1],
+    [0.20],[1.2],
 
 
   // Bottom rule
@@ -490,7 +494,8 @@ def generate_chunk(chance, height, width):
 ) <exp-result-table>
 
 #figure(
-  caption: [],
+  placement: auto,
+  caption: [Scatterplot of the results],
   image("plot.svg")
 ) <exp-result-plot>
 
