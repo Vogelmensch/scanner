@@ -362,15 +362,15 @@ As any cell belongs to exactly four sub-arrays (one for each direction), on assi
 ) <compare-and-fill>
 
 
-== Iterate <iterate>
+== Repeat until we're stuck <iterate>
 
 To solve the problem, all we have to do now is applying `compare_and_fill` to all pairs of depths and sub-arrays iteratively until we found a solution, see @fill-loop. But how do we know whether we found a valid solution? Consider the call to `update_sensor_data` in @compare-and-fill. With this call, all relevant input values are being updated after an assignment of `FULL` to a cell. Thus, when a valid solution has been found, the entire input has to be zero. This is the exact condition we need to check in order to find a valid assignment. If, at one point, all cell-entries have been assigned to either `FULL` or `EMPTY`, and simultaneously, not all inputs are zero, then the assignment that has been found is invalid.
 
  However, by simply calling `compare_and_fill` repeatedly, we are not guaranteed to find a solution. This is due to the fact that `compare_and_fill` does not guarantee to fill out all cells. At some point during the iteration, we may get stuck.
 
-This is where we introduce back our exhaustive search approach. Should we, at some point during the execution of @fill-loop, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant code: if, at some point during the execution of @fill-loop, the matrix does not change, and there are still `UNASSIGNED` cells left, we assign both values, `EMPTY` and `FULL`, to this cell sequentially. 
+This is where we introduce back our exhaustive search approach. Should we, at some point during the of `fill_loop()`, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant code: if, at some point during the execution of `fill_loop()`, the matrix does not change, and there are still `UNASSIGNED` cells left, we assign both values, `EMPTY` and `FULL`, to this cell sequentially. 
 
-Notice line 10 of @search: As soon as we have to rely on exhaustive search, we are not guaranteed that a valid solution is unique. Thus, we have to
+Notice line 12 of @search: As soon as we have to rely on exhaustive search, we are not guaranteed that a valid solution is unique. Thus, we have to
 1. Search among all possible assignments of `UNASSIGNED` variables, and
 2. Keep track how many solutions have been found. In @search, this is done with the `int`-valued variable `solutions_found`.
 We do not accept multiple solutions, which is why we immediately exit the program as soon as two solutions have been found.
@@ -422,7 +422,7 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 ) <search>
 
 
-= Analysis <analysis>
+= The chunk property's relevance <analysis>
 
 We have seen in @iterate that we need to resort to exhaustive search for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without relying on exhaustive search at such extense that the runtime exceeds a certain threshold.
 
