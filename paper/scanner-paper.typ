@@ -221,7 +221,7 @@
   },
 
   abstract: [
-    ACM releases several programming problems for ICPC every year. Problem "5168 - Scanner" provides the depth of a three-dimensional body as input, and demands the discrete reconstruction of the body as output. Exhaustive search fails to solve the problem in reasonable time. We propose a method that greatly reduces the search space for Exhaustive Search by exploiting a spatial property of the wanted body. Applying this method to randomly generated, valid inputs allows to fully avoid searching for $~ 98.5 %$ of inputs.
+    ACM releases several programming problems for ICPC every year. Problem "5168 - Scanner" provides the depth of a three-dimensional body as input, and demands the discrete reconstruction of the body as output. Exhaustive search fails to solve the problem in reasonable time. We propose a method that greatly reduces the search space for Exhaustive Search by exploiting a spatial property of the wanted body. Applying this method to randomly generated, valid inputs allows to fully avoid searching for $~ 98 %$ of inputs.
   ],
   ccs: none,
   keywords: ("ICPC", "Scanner", "Search"),
@@ -235,34 +235,36 @@
 
 The Scanner Problem introduces a scenario in which a three-dimensional body has been scanned for its depth. The task is to reconstruct the body from those depth-values alone. We explain the problem in detail in @encoding.
 
-The intuitive solution to this problem is to search through all possible assignments discretized matrices, through exhaustive or local search. This approach is not ideal for two reasons.
-1. Exhaustive Search has an exponential time complexity, which makes it unusable for bigger matrices (especially the ones features in the original problem description).
+The intuitive solution to this problem is to search through all possible assignments' discretized matrices, through exhaustive or local search. This approach is not ideal for two reasons.
+1. Exhaustive Search has an exponential time complexity, which makes it unusable for bigger matrices (especially the ones features in the original problem description @originalProblem).
 2. Local Search cannot identify invalid inputs.
 We cannot eliminate the need for search entirely (see @exhaustive). Still, we can view the problem at a different light.
-- The results that we are searching for share a common property, which we call the "chunk-property". The chunk-property can be exploited to assign large groups of cells at once with absolute certainty (see @chunk).
-- Some inputs may have zero or multiple solutions. We found two conditions that allow for handling those kind of inputs early (see @iterate).
-- We performed an exeriment to quantize the number of inputs that can be solved in this way. We generated random, valid data and checked the number of inputs where the program did not time-out, i.e. where it stuck at local search for too long. The results show that we can solve $~ 98.5 %$ of problems in sub-exponential time (see @analysis).
-While we are able to avoid exhaustive search for most inputs, some inputs still require a full search. Thus, further research for better search algorithms is still required.
+- The results that we are searching for share a common property, which we call the "chunk-property". The chunk-property can be exploited to simultaneously identify the values of cells belonging to large groups (see @chunk).
+- Some inputs may have zero or multiple solutions. We found two conditions that allow for identifying those kind of inputs early (see @iterate).
+- We performed an exeriment to quantize the number of inputs that can be solved in this way. We generated random, valid data and checked the number of inputs where the program did not time-out by performing a time-consuming search. The results show that we can solve $~ 98 %$ of problems in sub-exponential time (see @analysis).
+While we are able to avoid exhaustive search for most inputs, some inputs still require a full search. Thus, further research for faster search algorithms is still required.
 
 
 = Encoding a 3d body <encoding>
 
-To understand the scanner-algorithm, we must first understand the semantics of the code we are solving. In this section, we start with a three-dimensional body and encode it step by step, to end up with a set of integer-arrays.
+To understand the scanner-algorithm, we must first understand the semantics of the input we are given. In this section, we start with a three-dimensional body and encode it step by step, to end up with a set of integer-arrays.
 
-*Step one*: Along the vertical axis, the body is divided into a finite set of two-dimensional slices. Each slice is viewed as constant in depth along the vertical axis, i.e. having a discrete vertical depth of one. We then encode every slice independently of the others. All subsequent steps are applied to each slice individually. For the rest of the paper, we focus on one slice only for better understandability.
+*Step one*: We lay a three-dimensional grid of dimensions\ $(h times w times n)$ over the body.
 
-*Step two*: The slice is discretized as a grid of $h times w$ cells. A cell's state is binary-encoded: if the cell contains _any_ portion of the body, the cell is encoded as `FULL`. Otherwise, it is encoded as `EMPTY`. See @discretization.
+*Step two*: Along the third axis, the body is divided into a finite set of $n$ two-dimensional slices. We then encode every slice independently of the others. All subsequent steps are applied to each slice individually. For the rest of the paper, we focus on one slice only for better understandability.
 
-*Step three*: The grid of cells is now being measured for its depth along four directions. See @scanning for a visualization. The directions are:
+*Step three*: The slice is discretized as a grid of $h times w$ cells. A cell's state is binary-encoded: if the cell contains _any_ portion of the body, the cell is encoded as `FULL`. Otherwise, it is encoded as `EMPTY`. See @discretization.
+
+*Step four*: The grid of cells is now being measured for its depth along four directions. See @scanning for a visualization. The directions are:
 - horizontal
 - first diagonal (from bottom left to top right)
 - vertical, and
 - second diagonal (from bottom right to top left).
-For each of those directions, the discretized body's depth is measured at all possible locations. For a grid of dimension $h times w$, this yields four arrays with $h$, $h + w + 1$, $w$, and $h + w + 1$ entries respectively. For our example, the resulting arrays are shown in @encoded. Those four arrays make up the encoded slice.
+For each of those directions, the discretized body's depth is measured at all possible locations. For a grid of dimension $h times w$, this yields four arrays $a_1, ..., a_4$ with $dim(a_1) = h$, $dim(a_2) = h + w + 1$, $dim(a_3) = w$, and $dim(a_4) = h + w + 1$. For our example, the resulting arrays are shown in @encoded. Those four arrays make up the encoded slice.
 
 
 #figure(
-  placement: bottom,
+  placement: auto,
   caption: [Discretization of an object],
   diagram(
     spacing: 5em,
@@ -274,7 +276,7 @@ For each of those directions, the discretized body's depth is measured at all po
 
 
 #figure(
-  placement: bottom,
+  placement: auto,
   caption: [Encoding the object by scanning its depth],
   grid(
     rows: (auto, auto),
@@ -286,7 +288,7 @@ For each of those directions, the discretized body's depth is measured at all po
 
 
 #figure(
-  placement: bottom,
+  placement: auto,
   caption: [Arrays encoding the slice],
   ```Python
   [2, 2, 3, 2], # horizontal
@@ -299,38 +301,49 @@ For each of those directions, the discretized body's depth is measured at all po
 
 = Reconstructing a slice <reconstruct>
 
-We are given two integer-arrays of lengths $m$ and $n$, and two integer-arrays of lengths $m + n + 1$, all representing the depth of the object in the four possible directions. We want to reconstruct the discretized image from this data only. In this chapter, we explain the algorithmic approach we found to be most effective.
+We are given four integer-arrays representing the depth of the object (see @encoding). We want to reconstruct the discretized image from this data only. In this chapter, we explain 
+1. the intuitive approach and why it is not ideal (@exhaustive)
+2. a property being shared by all valid inputs, called the _chunk property_ (@chunk)
+3. how we handle special cases (@iterate)
 
 
-== Exhaustive Search <exhaustive>
+== Interpretation of the input <input-interpretation>
+
+So far, we interpreted the input as "depth of the matrix for a certain sub-array". Now, we want to introduce a slightly different interpretation. This will help to keep track of our progress later.
+
+The new interpretation for an input-integer $n$ corresponding to sub-array $"arr"$ is: $n$ equals the number of cells in $"arr"$ that are currently `UNASSIGNED` and need to be assigned with `FULL` at some point. In other words: $n$ is the number of `FULL` cells in $"arr"$ that have yet to be assigned.
+
+This means that every time we assign `FULL` to a cell, one value in each of the input-arrays has to be reduced by one.
+
+
+== General Approach: Exhaustive Search <exhaustive>
 
 The dimension of the resulting matrix is known from the lengths of the horizontal and vertical input arrays. The possible values to fill the matrix with are also known (`EMPTY` and `FULL`). Thus, we can simply try out all possible solutions, calculate the depth of the resulting object at the four given directions, and compare those to the input arrays.
 
-This approach is obviously not optimal, as it has exponential time complexity. However, we will need to incorporate exhaustive search into our solution to guarantee completeness, as we will see later.
+This approach is obviously not optimal, as it has exponential time complexity. However, we will need to incorporate exhaustive search into our solution to guarantee completeness, as we will see in @iterate.
 
 
 == Exploiting the chunk property <chunk>
 
-Our goal is to reduce the search space such that the slice can be reconstructed in sub-exponential time. To achieve this, we exploit a property our resulting matrices have. We call this the chunk property.
+Our goal is to reduce the search space such that the slice can be reconstructed in sub-exponential time. To achieve this, we exploit a property the input. We call this the *chunk property*.
 
 We know that we are recreating images of two-dimensional bodies. The term "body" is interpreted as: Most of the `FULL`-valued cells of the matrix are located next to each. What we do not expect, for example, is a noisy image, where the value of each cell is decided independently of its neighbors.
 
-From the chunk property follows that some sub-arrays (verticals, horizontals or diagonals) of the matrix may be completely filled with `EMPTY`-values. The respective depth for this sub-array must then be zero. Searching for zeros in the input thus leads to complete knowledge of all values in the respective sub-array.
+From the chunk property follows that some sub-arrays (verticals, horizontals or diagonals) of the matrix may be completely filled with `EMPTY`-values. The respective depth for this sub-array must then be zero. Thus, from finding a value of zero in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `EMPTY`-valued.
 
-From the chunk property also follows that some sub-arrays may be completely filled with `FULL`-values. The respective depth for this sub-array must then be equal to the length of the sub-array. Searching for values of maximal depth in the input thus leads to complete knowledge of all values in the respective sub-array as well.
+From the chunk property also follows that some sub-arrays may be completely filled with `FULL`-values. The respective depth for this sub-array must then be equal to the length of the sub-array. Thus, from finding a value of maximal depth in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `FULL`-valued.
 
-@compare-and-fill shows the code implementing `compare_and_fill`, the function which fills all cells whose state we can derive logically by the chunk property. Its parameters are
+@compare-and-fill shows the code implementing `compare_and_fill`, the function which fills all cells whose state we can derive logically applying by the chunk property. Its parameters are
 - `sensor_data_point`, a single depth-value from the input
 - `arr`, the corresponding sub-array of the matrix.
 The function does exactly what has been described above: if `sensor_data_point` equals zero, it assigns all unassigned values of `arr` to `EMPTY`. If `sensor_data_point` equals the number of unassigned values of `arr`, it assigns all those values to `FULL`.
 
-As any cell belongs to exactly four sub-arrays (one for each direction), on assignment of `FULL` to one cell, each depth-value for all of those four sub-arrays need to be updated. This is what the function call `update_sensor_data` in line 13 does.
+As any cell belongs to exactly four sub-arrays (one for each direction), on assignment of `FULL` to one cell, each input-value for all of those four sub-arrays need to be updated (see @input-interpretation). This is what the function call `update_sensor_data` in line 13 does.
 
 
 #figure(
   placement: auto,
   caption: [Using the chunk property],
-  //placement: top,
   ```Python
   def compare_and_fill(sensor_data_point, arr):
       n_of_unassigned = n_of_unassigned(arr)
@@ -349,15 +362,17 @@ As any cell belongs to exactly four sub-arrays (one for each direction), on assi
 ) <compare-and-fill>
 
 
-== Exactly one solution <iterate>
+== Iterate <iterate>
 
-How do we know whether we found a valid solution? Consider the call to `update_sensor_data` in @compare-and-fill. With this call, all relevant input values are being updated after an assignment of `FULL` to a cell. Thus, when a valid solution has been found, the entire input has to be zero. This is the exact condition we need to check in order to find a valid assignment. If, at one point, all cell-entries have been assigned to `FULL` or `EMPTY`, and simultaneously, not all inputs are zero, then the assignment that has been found is invalid.
+To solve the problem, all we have to do now is applying `compare_and_fill` to all pairs of depths and sub-arrays iteratively until we found a solution, see @fill-loop. But how do we know whether we found a valid solution? Consider the call to `update_sensor_data` in @compare-and-fill. With this call, all relevant input values are being updated after an assignment of `FULL` to a cell. Thus, when a valid solution has been found, the entire input has to be zero. This is the exact condition we need to check in order to find a valid assignment. If, at one point, all cell-entries have been assigned to either `FULL` or `EMPTY`, and simultaneously, not all inputs are zero, then the assignment that has been found is invalid.
 
-To solve the problem, all we have to do now is applying `compare_and_fill` to all pairs of depths and sub-arrays iteratively until we found a solution, see @fill-loop. However, we are not guaranteed to find a solution just yet. This is due to the fact that `compare_and_fill` does not guarantee to fill out all cells. At some point during the iteration, we may get stuck.
+ However, by simply calling `compare_and_fill` repeatedly, we are not guaranteed to find a solution. This is due to the fact that `compare_and_fill` does not guarantee to fill out all cells. At some point during the iteration, we may get stuck.
 
-This is where we introduce back our exhaustive search approach. Should we, at some point during the execution of @fill-loop, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant code: if, at some point during the execution of @fill-loop, the matrix does not change, and there are still `UNASSIGNED` cells left, we assign both values, `EMPTY` and `FULL`, to this cell sequentially. Notice line 10 of @search: As soon as we have to rely on exhaustive search, we are not guaranteed that a valid solution is unique. Thus, we have to
+This is where we introduce back our exhaustive search approach. Should we, at some point during the execution of @fill-loop, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant code: if, at some point during the execution of @fill-loop, the matrix does not change, and there are still `UNASSIGNED` cells left, we assign both values, `EMPTY` and `FULL`, to this cell sequentially. 
+
+Notice line 10 of @search: As soon as we have to rely on exhaustive search, we are not guaranteed that a valid solution is unique. Thus, we have to
 1. Search among all possible assignments of `UNASSIGNED` variables, and
-2. Keep track how many solutions have been found.
+2. Keep track how many solutions have been found. In @search, this is done with the `int`-valued variable `solutions_found`.
 We do not accept multiple solutions, which is why we immediately exit the program as soon as two solutions have been found.
 
 
@@ -388,13 +403,15 @@ We do not accept multiple solutions, which is why we immediately exit the progra
   ```Python
   # ... inside fill_loop()
   if not has_change_occured:
-    # indices of unassigned cells
-    indices_of_unassigned = np.argwhere(matrix.cell == UNASSIGNED)
+    # unassigned cells
+    unassigned_cells = matrix[UNASSIGNED]
 
-    for idx in indices_of_unassigned:
+    for cell in unassigned_cells:
       for assignment in [EMPTY, FULL]:
-        # assign value to matrix[idx]
-        search_in_branch(idx, value, matrix)
+        stack.push(matrix, input) # save data
+        matrix[idx] = value # assign by force
+        fill_loop() # loop over compare_and_fill
+        matrix, input = stack.pop() #re-assign data
         if solutions_found > 1:
           # the solution is ambiguous -> leave loop
           return
@@ -404,21 +421,21 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 
 = Analysis <analysis>
 
-We have seen in @iterate that we need to resort to exhaustive search algorithms for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$ for obvious reasons. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without having to resort to exhaustive search.
+We have seen in @iterate that we need to resort to exhaustive search for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without relying on exhaustive search at such extense that the runtime exceeds a certain threshold.
 
 We approached this question experimentally. This chapter describes this experiments setup and presents and discusses its results.
 
 
 == Setup <setup>
 
-1. Modify `scanner.py` to terminate if it has not found a solution after $T_(max)$ seconds.
-2. Generate $N=1000$ inputs that satisfy the chunk-property using the function `generate_chunk`, see @generate_chunk.
-3. Apply `scanner.py` to each input and count the number of terminations.
+1. Modify the scanner-algorithm to terminate if it has not found a solution after $T_(max)$ seconds.
+2. Generate $N=1000$ inputs that satisfy the chunk-property using the function `generate_chunk`, see below.
+3. Apply the scanner-algorithm to each input and count the number of terminations.
 4. Repeat step 2 and 3 with variating values for the parameter `chance` in `generate_chunk` to find the worst-case result.
 
-For point 1, the exact value of $T_max$ depends on the machine that is being used. We have found a great number of inputs to be solvable in $~0.07s$. We thus chose $T_max = 0.1s$ as an appropriate threshold value.
+For point 1, the exact value of $T_max$ depends on the machine that is being used. We have found a most inputs to be solvable in $~0.07s$. We thus chose $T_max = 0.1s$ as an appropriate threshold value.
 
-To generate an input, we developed `generate_chunk(chance, height, width)`, see @generate_chunk. The function iterates over every cell and turns it to a `FULL` cell with a probability of `chance`. This is repeated `min(height, width)` times. The value of `chance` is variable, as we repeat the experiment for various values of $"chance" in [0.15, 0.16, ..., 0.25]$ to find the worst-case result. We furthermore chose `height = 10` and `width = 15`, as those are the values used in the original problem description.
+To generate an input, we developed the function `generate_chunk(chance, height, width)`, see @generate_chunk. The function iterates over every cell and assigns `FULL` to a cell with a probability of $"chance" in [0,1]$. This is repeated exactly  `min(height, width)` times. We repeat the experiment for various values of $"chance" in [0.15, 0.16, ..., 0.25]$ to find the worst-case result. We furthermore chose `height = 10` and `width = 15`, as those are the values used in the original problem description.
 
 
 
@@ -445,9 +462,12 @@ def generate_chunk(chance, height, width):
 
 == Results <results>
 
+The results are listed in @exp-result-table and plotted in @exp-result-plot. The timeout-rate seems to have a maximum for a value of chance between $0.175$ and $0.25$. The highest measured timeout-rate is $1.4 %$ for $"chance" = 0.22$.
+
+
 #figure(
   placement: auto,
-  caption: [Results of the experiment],
+  caption: [Experiment Results],
   table(
     columns: 4,
     align: (center, center,),
@@ -495,7 +515,7 @@ def generate_chunk(chance, height, width):
 
 #figure(
   placement: auto,
-  caption: [Scatterplot of the results],
+  caption: [Experiment Results Scatterplot],
   image("plot.svg")
 ) <exp-result-plot>
 
@@ -503,9 +523,18 @@ def generate_chunk(chance, height, width):
 
 == Interpretation <interpretation>
 
-Our experiment shows that the timeout-rate $t$ does not exceed $t = 1.5 %$. From this we can conclude that $~98.5 %$ of inputs can be solved in sub-exponential time.
+Our experiment shows that the timeout-rate $t$ does not exceed $t = 1.5 %$. From this we can safely conclude that $~98 %$ of inputs can be solved in sub-exponential time.
 
 
 = Future work <future>
 
-The search algorithm we used is a simple exhaustive search. We put all work into reducing the search space such that exhaustive search has to be used as few times as possible. To further improve the performance for every possible input, future work may focus on finding better search algorithms. One possibility that has been tried during our research is simulated annealing. However, a thorough implementation was beyond the scope of this research project.
+The search algorithm we used is a simple exhaustive search. We put all work into reducing the search space such that exhaustive search has to be used as few times as possible. To further improve the performance for every possible input, future work may focus on finding more efficient search algorithms. One possibility that has been tried during our research is simulated annealing, a local search algorithm which is guaranteed to find the global optimum, given enough time. However, a thorough implementation was beyond the scope of this research project.
+
+
+#set heading(numbering: none)
+= References
+
+#set text(size: 7pt)
+#set par(leading: 3pt, spacing: 4pt)
+
+#bibliography(("references.bib"), title: none, style: "ieee-acm.csl")
