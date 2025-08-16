@@ -303,13 +303,13 @@ For each of those directions, the discretized body's depth is measured at all po
 
 We are given four integer-arrays representing the depth of the object (see @encoding). We want to reconstruct the discretized image from this data only. In this chapter, we explain 
 1. the intuitive approach and why it is not ideal (@exhaustive)
-2. a property being shared by all valid inputs, called the _chunk property_ (@chunk)
+2. the _chunk property_ (@chunk), and how we use it to assign many cells simultaneously
 3. how we handle special cases (@iterate)
 
 
 == Interpretation of the input <input-interpretation>
 
-So far, we interpreted the input as "depth of the matrix for a certain sub-array". Now, we want to introduce a slightly different interpretation. This will help to keep track of our progress later.
+So far, we interpreted the input as "depth of the object for a certain sub-array". Now, we want to introduce a slightly different interpretation. This will help to keep track of our progress later.
 
 The new interpretation for an input-integer $n$ corresponding to sub-array $"arr"$ is: $n$ equals the number of cells in $"arr"$ that are currently `UNASSIGNED` and need to be assigned with `FULL` at some point. In other words: $n$ is the number of `FULL`-valued cells in $"arr"$ that have yet to be assigned.
 
@@ -325,13 +325,13 @@ This approach is obviously not optimal, as it has exponential time complexity. H
 
 == Exploiting the chunk property <chunk>
 
-Our goal is to reduce the search space such that the slice can be reconstructed in sub-exponential time. To achieve this, we exploit a property the input. We call this the *chunk property*.
+Our goal is to reduce the search space such that the slice can be reconstructed in sub-exponential time. To achieve this, we exploit a property of the input. We call this the *chunk property*.
 
-We know that we are recreating images of two-dimensional bodies. The term "body" is interpreted as: Most of the `FULL`-valued cells of the matrix are located next to each. What we do not expect, for example, is a noisy image, where the value of each cell is decided independently of its neighbors.
+We know that we are recreating images of two-dimensional bodies. The term "body" is interpreted as: *Most of the `FULL`-valued cells of the matrix are located next to each other*. What we do not expect, for example, is a noisy image, where the value of each cell is decided independently of its neighbors.
 
 From the chunk property follows that some sub-arrays (verticals, horizontals or diagonals) of the matrix may be completely filled with `EMPTY`-values. The respective depth for this sub-array must then be zero. Thus, from finding a value of zero in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `EMPTY`-valued.
 
-From the chunk property also follows that some sub-arrays may be completely filled with `FULL`-values. The respective depth for this sub-array must then be equal to the length of the sub-array. Thus, from finding a value of maximal depth in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `FULL`-valued.
+From the chunk property also follows that some sub-arrays may be completely filled with `FULL`-values. The respective depth of the object for this sub-array must then be equal to the length of the sub-array. Thus, from finding a value of maximal depth in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `FULL`-valued.
 
 @compare-and-fill shows the code implementing `compare_and_fill`, the function which fills all cells whose state we can derive logically applying by the chunk property. Its parameters are
 - `sensor_data_point`, a single depth-value from the input
@@ -368,7 +368,7 @@ To solve the problem, all we have to do now is applying `compare_and_fill` to al
 
  However, by simply calling `compare_and_fill` repeatedly, we are not guaranteed to find a solution. This is due to the fact that `compare_and_fill` does not guarantee to fill out all cells. At some point during the iteration, we may get stuck.
 
-This is where we introduce back our exhaustive search approach. Should we, at some point during the of `fill_loop()`, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant code: if, at some point during the execution of `fill_loop()`, the matrix does not change, and there are still `UNASSIGNED` cells left, we assign both values, `EMPTY` and `FULL`, to this cell sequentially. 
+This is where we introduce back our exhaustive search approach. Should we, at some point during the execution of `fill_loop()`, get stuck (i.e. no value has been altered during one iteration), we assign one cell of value `UNASSIGNED` by force, and then continue the loop. @search shows the relevant code: if, at some point during the execution of `fill_loop()`, the matrix does not change, and there are still `UNASSIGNED` cells left, we sequentially assign both values, `EMPTY` and `FULL`, to those cells. 
 
 Notice line 12 of @search: As soon as we have to rely on exhaustive search, we are not guaranteed that a valid solution is unique. Thus, we have to
 1. Search among all possible assignments of `UNASSIGNED` variables, and
@@ -424,7 +424,7 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 
 = The chunk property's relevance <analysis>
 
-We have seen in @iterate that we need to resort to exhaustive search for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without relying on exhaustive search at such extense that the runtime exceeds a certain threshold.
+We have seen in @iterate that we need to resort to exhaustive search for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$. To research the quality of our algorithm, we want to quantify the fraction of inputs that can be solved in sub-exponential time, meaning, without relying on exhaustive search at such extense that the runtime exceeds a certain threshold. 
 
 We approached this question experimentally. This chapter describes this experiment's setup and presents and discusses its results.
 
@@ -432,13 +432,15 @@ We approached this question experimentally. This chapter describes this experime
 == Setup <setup>
 
 1. Modify the scanner-algorithm to terminate if it has not found a solution after $T_(max)$ seconds.
-2. Generate $N=1000$ inputs that satisfy the chunk-property using the function `generate_chunk`, see below.
+2. Generate $N=1000$ inputs that satisfy the chunk-property.
 3. Apply the scanner-algorithm to each input and count the number of terminations.
 4. Repeat step 2 and 3 with variating values for the parameter `chance` in `generate_chunk` to find the worst-case result.
 
 For point 1, the exact value of $T_max$ depends on the machine that is being used. We have found a most inputs to be solvable in $~0.07s$. We thus chose $T_max = 0.1s$ as an appropriate threshold value.
 
-To generate an input, we developed the function `generate_chunk(chance, height, width)`, see @generate_chunk. The function creates an `EMPTY`-valued matrix of dimension $("height" times "width")$ and assigns `FULL` to the central cell. Next, it iterates over every cell and assigns `FULL` to a cell with a probability of $"chance" in [0,1]$. This is repeated exactly `min(height, width)` times. We repeat the experiment for various values of $"chance" in [0.15, 0.16, ..., 0.25]$ to find the worst-case result. We furthermore chose `height = 10` and `width = 15`, as those are the values used in the original problem description.
+To generate an input, we developed the function `generate_chunk(chance, height, width)`, see @generate_chunk. The function creates an `EMPTY`-valued matrix of dimension $("height" times "width")$ and assigns `FULL` to the central cell. Next, it iterates over every cell and assigns `FULL` to a cell with a probability of $"chance" in [0,1]$. This is repeated exactly `min(height, width)` times. 
+
+We repeat the experiment for various values of $"chance" in [0.15, 0.16, ..., 0.25]$ to find the worst-case result. We furthermore chose `height = 10` and `width = 15`, as those are the values used in the original problem description.
 
 
 
