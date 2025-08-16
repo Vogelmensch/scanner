@@ -238,10 +238,10 @@ The Scanner Problem introduces a scenario in which a three-dimensional body has 
 The intuitive solution to this problem is to search through all possible assignments' discretized matrices, through exhaustive or local search. This approach is not ideal for two reasons.
 1. Exhaustive Search has an exponential time complexity, which makes it unusable for bigger matrices (especially the ones features in the original problem description @originalProblem).
 2. Local Search cannot identify invalid inputs.
-We cannot eliminate the need for search entirely (see @exhaustive). Still, we can view the problem at a different light.
+We cannot eliminate the need for search entirely (see @exhaustive). Still, we can view the problem in a different light.
 - The results that we are searching for share a common property, which we call the "chunk-property". The chunk-property can be exploited to simultaneously identify the values of cells belonging to large groups (see @chunk).
 - Some inputs may have zero or multiple solutions. We found two conditions that allow for identifying those kind of inputs early (see @iterate).
-- We performed an exeriment to quantize the number of inputs that can be solved in this way. We generated random, valid data and checked the number of inputs where the program did not time-out by performing a time-consuming search. The results show that we can solve $~ 98 %$ of problems in sub-exponential time (see @analysis).
+- We performed an experiment to quantize the number of inputs that can be solved in this way. We generated random, valid data and checked the number of inputs where the program did not time-out by performing a time-consuming search. The results show that we can solve $~ 98 %$ of problems in sub-exponential time (see @analysis).
 While we are able to avoid exhaustive search for most inputs, some inputs still require a full search. Thus, further research for faster search algorithms is still required.
 
 
@@ -249,7 +249,7 @@ While we are able to avoid exhaustive search for most inputs, some inputs still 
 
 To understand the scanner-algorithm, we must first understand the semantics of the input we are given. In this section, we start with a three-dimensional body and encode it step by step, to end up with a set of integer-arrays.
 
-*Step one*: We lay a three-dimensional grid of dimensions\ $(h times w times n)$ over the body.
+*Step one*: We lay a three-dimensional grid of dimensions $(h times w times n)$ over the body.
 
 *Step two*: Along the third axis, the body is divided into a finite set of $n$ two-dimensional slices. We then encode every slice independently of the others. All subsequent steps are applied to each slice individually. For the rest of the paper, we focus on one slice only for better understandability.
 
@@ -265,7 +265,7 @@ For each of those directions, the discretized body's depth is measured at all po
 
 #figure(
   placement: auto,
-  caption: [Discretization of an object],
+  caption: [Discretizing an object as a grid of $4 times 4$ cells],
   diagram(
     spacing: 5em,
     node((0, 0), smatrix_with_object()),
@@ -277,7 +277,7 @@ For each of those directions, the discretized body's depth is measured at all po
 
 #figure(
   placement: auto,
-  caption: [Encoding the object by scanning its depth],
+  caption: [Encoding the object by counting `FULL`-valued cells along four directions],
   grid(
     rows: (auto, auto),
     columns: (auto, auto),
@@ -289,12 +289,12 @@ For each of those directions, the discretized body's depth is measured at all po
 
 #figure(
   placement: auto,
-  caption: [Arrays encoding the slice],
+  caption: [Input-Arrays encoding the $4 times 4$ slice],
   ```Python
-  [2, 2, 3, 2], # horizontal
-  [0, 1, 3, 3, 2, 0, 0], #left-right-diagonals
-  [2, 4, 3, 0], # vertical
-  [1, 2, 1, 2, 2, 1, 0] # right-left-diagonals
+  in_horiz = [2, 2, 3, 2], # horizontal
+  in_diag_lr = [0, 1, 3, 3, 2, 0, 0], #left-right-diagonals
+  in_vert = [2, 4, 3, 0], # vertical
+  in_diag_rl = [1, 2, 1, 2, 2, 1, 0] # right-left-diagonals
   ```,
 ) <encoded>
 
@@ -311,7 +311,7 @@ We are given four integer-arrays representing the depth of the object (see @enco
 
 So far, we interpreted the input as "depth of the matrix for a certain sub-array". Now, we want to introduce a slightly different interpretation. This will help to keep track of our progress later.
 
-The new interpretation for an input-integer $n$ corresponding to sub-array $"arr"$ is: $n$ equals the number of cells in $"arr"$ that are currently `UNASSIGNED` and need to be assigned with `FULL` at some point. In other words: $n$ is the number of `FULL` cells in $"arr"$ that have yet to be assigned.
+The new interpretation for an input-integer $n$ corresponding to sub-array $"arr"$ is: $n$ equals the number of cells in $"arr"$ that are currently `UNASSIGNED` and need to be assigned with `FULL` at some point. In other words: $n$ is the number of `FULL`-valued cells in $"arr"$ that have yet to be assigned.
 
 This means that every time we assign `FULL` to a cell, one value in each of the input-arrays has to be reduced by one.
 
@@ -381,18 +381,21 @@ We do not accept multiple solutions, which is why we immediately exit the progra
   caption: [Applying `compare_and_fill`],
   //placement: top,
   ```Python
-  while(not is_done()):
-    diag_lr = get_diagonal_lr(matrix)
-    diag_rl = get_diagonal_rl(matrix)
+  def fill_loop():
+    while(not is_done()):
+      diag_lr = get_diagonal_lr(matrix)
+      diag_rl = get_diagonal_rl(matrix)
 
-    for i in range(height):
-      compare_and_fill(in_horiz[i], matrix[i,:])
-    for i in range(height + width - 1):
-      compare_and_fill(in_diag_lr[i], diag_lr[i])
-    for i in range(width):
-      compare_and_fill(in_vert[i], matrix[:,i])
-    for i in range(height + width - 1):
-      compare_and_fill(in_diag_rl[i], diag_rl[i])
+      for i in range(height):
+        compare_and_fill(in_horiz[i], matrix[i,:])
+      for i in range(height + width - 1):
+        compare_and_fill(in_diag_lr[i], diag_lr[i])
+      for i in range(width):
+        compare_and_fill(in_vert[i], matrix[:,i])
+      for i in range(height + width - 1):
+        compare_and_fill(in_diag_rl[i], diag_rl[i])
+
+    search_if_stuck()
   ```,
 ) <fill-loop>
 
@@ -401,20 +404,20 @@ We do not accept multiple solutions, which is why we immediately exit the progra
   placement:auto,
   caption: [Exhaustive Search],
   ```Python
-  # ... inside fill_loop()
-  if not has_change_occured:
-    # unassigned cells
-    unassigned_cells = matrix[UNASSIGNED]
+  def search_if_stuck():
+    if not has_change_occurred:
+      # unassigned cells
+      unassigned_cells = matrix[UNASSIGNED]
 
-    for cell in unassigned_cells:
-      for assignment in [EMPTY, FULL]:
-        stack.push(matrix, input) # save data
-        matrix[idx] = value # assign by force
-        fill_loop() # loop over compare_and_fill
-        matrix, input = stack.pop() #re-assign data
-        if solutions_found > 1:
-          # the solution is ambiguous -> leave loop
-          return
+      for cell in unassigned_cells:
+        for assignment in [EMPTY, FULL]:
+          stack.push(matrix, input) # save 
+          matrix[idx] = value # assign by force
+          fill_loop() 
+          matrix, input = stack.pop() # load
+          if solutions_found > 1:
+            # solution is ambiguous -> leave loop
+            return
   ```,
 ) <search>
 
@@ -423,7 +426,7 @@ We do not accept multiple solutions, which is why we immediately exit the progra
 
 We have seen in @iterate that we need to resort to exhaustive search for some inputs. Our naive approach has a worst-case time-complexity of $cal(O)(2^(m times n))$. To research the quality of our algorithm, we want to quantify the fraction of all inputs that can be solved in sub-exponential time, meaning, without relying on exhaustive search at such extense that the runtime exceeds a certain threshold.
 
-We approached this question experimentally. This chapter describes this experiments setup and presents and discusses its results.
+We approached this question experimentally. This chapter describes this experiment's setup and presents and discusses its results.
 
 
 == Setup <setup>
@@ -435,7 +438,7 @@ We approached this question experimentally. This chapter describes this experime
 
 For point 1, the exact value of $T_max$ depends on the machine that is being used. We have found a most inputs to be solvable in $~0.07s$. We thus chose $T_max = 0.1s$ as an appropriate threshold value.
 
-To generate an input, we developed the function `generate_chunk(chance, height, width)`, see @generate_chunk. The function iterates over every cell and assigns `FULL` to a cell with a probability of $"chance" in [0,1]$. This is repeated exactly  `min(height, width)` times. We repeat the experiment for various values of $"chance" in [0.15, 0.16, ..., 0.25]$ to find the worst-case result. We furthermore chose `height = 10` and `width = 15`, as those are the values used in the original problem description.
+To generate an input, we developed the function `generate_chunk(chance, height, width)`, see @generate_chunk. The function creates an `EMPTY`-valued matrix of dimension $("height" times "width")$ and assigns `FULL` to the central cell. Next, it iterates over every cell and assigns `FULL` to a cell with a probability of $"chance" in [0,1]$. This is repeated exactly `min(height, width)` times. We repeat the experiment for various values of $"chance" in [0.15, 0.16, ..., 0.25]$ to find the worst-case result. We furthermore chose `height = 10` and `width = 15`, as those are the values used in the original problem description.
 
 
 
@@ -451,7 +454,7 @@ def generate_chunk(chance, height, width):
 
   for _ in range(min(height, width)):
     for cell in chunk_matrix:
-      if one_neighbor_of(cell) == FULL and random.random() < chance
+      if one_neighbor_of(cell) == FULL and random.random() < chance:
         cell = FULL
       
   matrix_to_data(chunk_matrix, height, width)
@@ -514,7 +517,7 @@ The results are listed in @exp-result-table and plotted in @exp-result-plot. The
 ) <exp-result-table>
 
 #figure(
-  placement: auto,
+  placement: top,
   caption: [Experiment Results Scatterplot],
   image("plot.svg")
 ) <exp-result-plot>
