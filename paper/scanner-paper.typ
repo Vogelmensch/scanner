@@ -244,6 +244,8 @@ We cannot eliminate the need for search entirely (see @exhaustive). Still, we ca
 - We performed an experiment to quantize the number of inputs that can be solved in this way. We generated random, valid data and checked the number of inputs where the program did not time-out by performing a time-consuming search. The results show that we can solve $~ 98 %$ of problems in sub-exponential time (see @analysis).
 While we are able to avoid exhaustive search for most inputs, some inputs still require a full search. Thus, further research for faster search algorithms is still required.
 
+We chose Python to implement the algorithm and the experiment, for its popularity and simplicity. The source code can be accessed via GitHub @repo. The code-listings in this paper follow a pythonic pseudocode style, which leans on the source code but has been heavily simplified to improve readability.
+
 
 = Encoding a 3d body <encoding>
 
@@ -329,9 +331,11 @@ Our goal is to reduce the search space such that the slice can be reconstructed 
 
 We know that we are recreating images of two-dimensional bodies. The term "body" is interpreted as: *Most of the `FULL`-valued cells of the matrix are located next to each other*. What we do not expect, for example, is a noisy image, where the value of each cell is decided independently of its neighbors.
 
-From the chunk property follows that some sub-arrays (verticals, horizontals or diagonals) of the matrix may be completely filled with `EMPTY`-values. The respective depth for this sub-array must then be zero. Thus, from finding a value of zero in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `EMPTY`-valued.
+From the chunk property follows that many sub-arrays (verticals, horizontals or diagonals) of the matrix are completely filled with `EMPTY`-values. Such sub-arrays represent the area in which the object *is not* located, like the edges of the matrix. The respective depth for such a sub-array must then be zero. Thus, from finding a value of zero in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `EMPTY`-valued.
 
-From the chunk property also follows that some sub-arrays may be completely filled with `FULL`-values. The respective depth of the object for this sub-array must then be equal to the length of the sub-array. Thus, from finding a value of maximal depth in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `FULL`-valued.
+The cunk property makes no statement about sub-arrays being completely filled with `FULL`-values. Picture an object located in the center of a matrix and surrounded with empty cells. None of the sub-arrays of this matrix is completely `FULL`-valued. However, if we only consider the unassigned cells of a sub-array - let's call the collection of those cells the *assignee* of the sub-array - we get a different picture. The previous paragraph implies that `EMPTY`-valued cells are quickly being identified. What remains in the assignee are the `FULL`-valued cells only.
+
+So we can conclude: From the chunk property follows that, in advanced iterations, many assignees are completely filled with `FULL`-values. Such assignees represent the area in which the object *is* located. The respective depth of the object for this assignee must then be equal to the number of unassigned cells. Thus, from finding a value of maximal depth in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `FULL`-valued. 
 
 @compare-and-fill shows the code implementing `compare_and_fill`, the function which fills all cells whose state we can derive logically applying by the chunk property. Its parameters are
 - `sensor_data_point`, a single depth-value from the input
@@ -456,7 +460,8 @@ def generate_chunk(chance, height, width):
 
   for _ in range(min(height, width)):
     for cell in chunk_matrix:
-      if one_neighbor_of(cell) == FULL and random.random() < chance:
+      if one_neighbor_of(cell) == FULL and 
+         random.random() < chance:
         cell = FULL
       
   matrix_to_data(chunk_matrix, height, width)
