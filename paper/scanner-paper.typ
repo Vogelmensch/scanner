@@ -28,10 +28,10 @@
 #let FULL_COLOR = aqua
 
 // scanner-cell
-#let scell(x, y, isFull, col: FULL_COLOR) = node(
+#let scell(x, y, isFull, col: FULL_COLOR, dim: 2em) = node(
   (x, y),
-  width: 2em,
-  height: 2em,
+  width: dim,
+  height: dim,
   shape: rect,
   stroke: 1pt,
   fill: if isFull { col } else { white },
@@ -199,6 +199,40 @@
   node((4, -1), " "),
 ))
 
+// smaller scanner cell for bigger matrices
+#let sscell(x, y, isFull) = scell(x, y, isFull, dim: 1em)
+
+#let no_chunk_matrix = diagram(
+  debug: false,
+  spacing: (0pt, 0pt),
+
+  for x in range(8) {
+    for y in range(8) {
+      sscell(x, y, 
+      // set true (= FULL) and false (= EMPTY) based on following conditions:
+      calc.rem(x+8*y, 5) == 0 or 
+      calc.rem(x+8*y, 3) == 0
+      )
+    }
+  }
+)
+
+#let chunk_matrix = diagram(
+  debug: false,
+  spacing: (0pt, 0pt),
+
+  for x in range(8) {
+    for y in range(8) {
+      sscell(x, y, 
+      // set true (= FULL) and false (= EMPTY) based on following conditions:
+      x > 2 and x < 6 and y > 2 and y < 7 or 
+      x > 0 and x < 4 and y > 0 and y < 5 or
+      x > 3 and x < 7 and y == 2
+      )
+    }
+  }
+)
+
 
 
 
@@ -329,11 +363,11 @@ This approach is obviously not optimal, as it has exponential time complexity. H
 
 Our goal is to reduce the search space such that the slice can be reconstructed in sub-exponential time. To achieve this, we exploit a property of the input. We call this the *chunk property*.
 
-We know that we are recreating images of two-dimensional bodies. The term "body" is interpreted as: *Most of the `FULL`-valued cells of the matrix are located next to each other*. What we do not expect, for example, is a noisy image, where the value of each cell is decided independently of its neighbors.
+We know that we are recreating images of two-dimensional bodies. The term "body" is interpreted as: *Most of the `FULL`-valued cells of the matrix are located next to each other*. What we do not expect, for example, is a noisy image, where the value of each cell is decided independently of its neighbors. See @chunk-property-example for an example.
 
 From the chunk property follows that many sub-arrays (verticals, horizontals or diagonals) of the matrix are completely filled with `EMPTY`-values. Such sub-arrays represent the area in which the object *is not* located, like the edges of the matrix. The respective depth for such a sub-array must then be zero. Thus, from finding a value of zero in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `EMPTY`-valued.
 
-The cunk property makes no statement about sub-arrays being completely filled with `FULL`-values. Picture an object located in the center of a matrix and surrounded with empty cells. None of the sub-arrays of this matrix is completely `FULL`-valued. However, if we only consider the unassigned cells of a sub-array - let's call the collection of those cells the *assignee* of the sub-array - we get a different picture. The previous paragraph implies that `EMPTY`-valued cells are quickly being identified. What remains in the assignee are the `FULL`-valued cells only.
+The cunk property makes no statement about sub-arrays being completely filled with `FULL`-values. Picture an object located in the center of a matrix and surrounded with empty cells. None of the sub-arrays of this matrix is completely `FULL`-valued. However, if we only consider the unassigned cells of a sub-array - let us call the collection of those cells the *assignee* of the sub-array - we get a different picture. The previous paragraph implies that `EMPTY`-valued cells are quickly being identified. What remains in the assignee are the `FULL`-valued cells only.
 
 So we can conclude: From the chunk property follows that, in advanced iterations, many assignees are completely filled with `FULL`-values. Such assignees represent the area in which the object *is* located. The respective depth of the object for this assignee must then be equal to the number of unassigned cells. Thus, from finding a value of maximal depth in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `FULL`-valued. 
 
@@ -344,6 +378,15 @@ The function does exactly what has been described above: if `sensor_data_point` 
 
 As any cell belongs to exactly four sub-arrays (one for each direction), on assignment of `FULL` to one cell, each input-value for all of those four sub-arrays need to be updated (see @input-interpretation). This is what the function call `update_sensor_data` in line 13 does.
 
+#figure(
+  placement: auto,
+  caption: [Chunk property examples. The left matrix does not fulfill the chunk property. The right matrix does.],
+  grid(
+    columns: (auto, auto),
+    gutter: 10%,
+    no_chunk_matrix, chunk_matrix
+  )
+) <chunk-property-example>
 
 #figure(
   placement: auto,
