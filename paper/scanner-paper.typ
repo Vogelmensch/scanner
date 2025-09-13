@@ -273,7 +273,7 @@ The intuitive solution to this problem is to search through all possible assignm
 1. Exhaustive Search has an exponential time complexity, which makes it unusable for bigger matrices (especially the ones features in the original problem description @originalProblem).
 2. Local Search cannot identify invalid inputs.
 We cannot eliminate the need for search entirely (see @exhaustive). Still, we can view the problem in a different light.
-- The results that we are searching for share a common property, which we call the "chunk-property". The chunk-property can be exploited to simultaneously identify the values of cells belonging to large groups (see @chunk).
+- The results that we are searching for share a common property, which we call the "chunk property". The chunk property can be exploited to simultaneously identify the values of cells belonging to large groups (see @chunk).
 - Some inputs may have zero or multiple solutions. We found two conditions that allow for identifying those kind of inputs early (see @iterate).
 - We performed an experiment to quantize the number of inputs that can be solved in this way. We generated random, valid data and checked the number of inputs where the program did not time-out by performing a time-consuming search. The results show that we can solve $~ 98 %$ of problems in sub-exponential time (see @analysis).
 While we are able to avoid exhaustive search for most inputs, some inputs still require a full search. Thus, further research for faster search algorithms is still required.
@@ -317,6 +317,8 @@ For each of those directions, the discretized body's depth is measured at all po
   grid(
     rows: (auto, auto),
     columns: (auto, auto),
+    column-gutter: 4%,
+    row-gutter: .8%,
     smatrix_horizontal, smatrix_diag_lr, 
     smatrix_vertical, smatrix_diag_rl,
   ),
@@ -371,12 +373,12 @@ The cunk property makes no statement about sub-arrays being completely filled wi
 
 So we can conclude: From the chunk property follows that, in advanced iterations, many assignees are completely filled with `FULL`-values. Such assignees represent the area in which the object *is* located. The respective depth of the object for this assignee must then be equal to the number of unassigned cells. Thus, from finding a value of maximal depth in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `FULL`-valued. 
 
-@compare-and-fill shows the code implementing `compare_and_fill`, the function which fills all cells whose state we can derive logically applying by the chunk property. Its parameters are
+@compare-and-fill shows the code implementing `compare_and_fill`, the function which fills all cells whose state can be derived logically by applying the chunk property. Its parameters are
 - `sensor_data_point`, a single depth-value from the input
 - `arr`, the corresponding sub-array of the matrix.
 The function does exactly what has been described above: if `sensor_data_point` equals zero, it assigns all unassigned values of `arr` to `EMPTY`. If `sensor_data_point` equals the number of unassigned values of `arr`, it assigns all those values to `FULL`.
 
-As any cell belongs to exactly four sub-arrays (one for each direction), on assignment of `FULL` to one cell, each input-value for all of those four sub-arrays need to be updated (see @input-interpretation). This is what the function call `update_sensor_data` in line 13 does.
+As any cell belongs to exactly four sub-arrays (one for each direction), on assignment of `FULL` to one cell, each input-value for all of those four sub-arrays needs to be updated (see @input-interpretation). This is what the function call `update_sensor_data` in line 13 does.
 
 #figure(
   placement: auto,
@@ -411,7 +413,7 @@ As any cell belongs to exactly four sub-arrays (one for each direction), on assi
 
 == Repeat until we're stuck <iterate>
 
-To solve the problem, all we have to do now is applying `compare_and_fill` to all pairs of depths and sub-arrays iteratively until we found a solution, see @fill-loop. But how do we know whether we found a valid solution? Consider the call to `update_sensor_data` in @compare-and-fill. With this call, all relevant input values are being updated after an assignment of `FULL` to a cell. Thus, when a valid solution has been found, the entire input has to be zero. This is the exact condition we need to check in order to find a valid assignment. If, at one point, all cell-entries have been assigned to either `FULL` or `EMPTY`, and simultaneously, not all inputs are zero, then the assignment that has been found is invalid.
+To solve the problem, all we have to do now is applying `compare_and_fill` to all pairs of depths and sub-arrays iteratively until we find a solution, see @fill-loop. But how do we know whether a valid solution has been found? Consider the call to `update_sensor_data` in @compare-and-fill. With this call, all relevant input values are being reduced by one after an assignment of `FULL` to a cell. Thus, when a valid solution has been found, the entire input has to be zero. This is the exact condition we need to check in order to find a valid assignment. If, at one point, all cell-entries have been assigned to either `FULL` or `EMPTY`, and simultaneously, not all inputs are zero, then the assignment that has been found is invalid.
 
  However, by simply calling `compare_and_fill` repeatedly, we are not guaranteed to find a solution. This is due to the fact that `compare_and_fill` does not guarantee to fill out all cells. At some point during the iteration, we may get stuck.
 
@@ -479,11 +481,11 @@ We approached this question experimentally. This chapter describes this experime
 == Setup <setup>
 
 1. Modify the scanner-algorithm to terminate if it has not found a solution after $T_(max)$ seconds.
-2. Generate $N=1000$ inputs that satisfy the chunk-property.
+2. Generate $N=1000$ inputs that satisfy the chunk property.
 3. Apply the scanner-algorithm to each input and count the number of terminations.
 4. Repeat step 2 and 3 with variating values for the parameter `chance` in `generate_chunk` to find the worst-case result.
 
-For point 1, the exact value of $T_max$ depends on the machine that is being used. We have found a most inputs to be solvable in $~0.07s$. We thus chose $T_max = 0.1s$ as an appropriate threshold value.
+For point 1, the exact value of $T_max$ depends on the machine that is being used. We found most inputs to be solvable in $~0.07s$. We thus chose $T_max = 0.1s$ as an appropriate threshold value.
 
 To generate an input, we developed the function `generate_chunk(chance, height, width)`, see @generate_chunk. The function creates an `EMPTY`-valued matrix of dimension $("height" times "width")$ and assigns `FULL` to the central cell. Next, it iterates over every cell and assigns `FULL` to a cell with a probability of $"chance" in [0,1]$. This is repeated exactly `min(height, width)` times. 
 
@@ -515,7 +517,7 @@ def generate_chunk(chance, height, width):
 
 == Results <results>
 
-The results are listed in @exp-result-table and plotted in @exp-result-plot. The timeout-rate seems to have a maximum for a value of chance between $0.175$ and $0.25$. The highest measured timeout-rate is $1.4 %$ for $"chance" = 0.22$.
+The results are listed in @exp-result-table and plotted in @exp-result-plot. The timeout-rate increases with the chance until a maximum between $0.175 %$ and $0.25 %$, and decreases thereafter. The highest measured timeout-rate is $1.4 %$ for $"chance" = 0.22 %$.
 
 
 #figure(
@@ -576,10 +578,12 @@ The results are listed in @exp-result-table and plotted in @exp-result-plot. The
 
 == Interpretation <interpretation>
 
-Our experiment shows that the timeout-rate $t$ does not exceed $t = 1.5 %$. From this we can safely conclude that $~98 %$ of inputs can be solved in sub-exponential time.
+Our experiment shows that the timeout-rate $t$ does not exceed $t = 1.5 %$. The measured peak is expected to be the global maximum, as generated matrices with $"chance" < 0.1 %$ are almost entirely empty, while matrices with $"chance" > 0.3 %$ are almost entirely full. Such matrices do not require searching, as `compare_and_fill` fills out almost all sub-arrays in the first iteration. From this we can safely conclude that $~98 %$ of inputs can be solved in sub-exponential time.
 
 
-= Future work <future>
+= Achievements and Future work <future>
+
+We were able to show that the scanner-problem does not rely on heavy search for almost all inputs. By exploiting the chunk property, which all inputs possess, the search space is being reduced dramatically. Still, around $2 %$ of inputs require substantial time for searching.
 
 The search algorithm we used is a simple exhaustive search. We put all work into reducing the search space such that exhaustive search has to be used as few times as possible. To further improve the performance for every possible input, future work may focus on finding more efficient search algorithms. One possibility that has been tried during our research is simulated annealing, a local search algorithm which is guaranteed to find the global optimum, given enough time. However, a thorough implementation was beyond the scope of this research project.
 
