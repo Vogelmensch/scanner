@@ -270,7 +270,7 @@
 The Scanner Problem introduces a scenario in which a three-dimensional body has been scanned for its depth. The task is to reconstruct the body from those depth-values alone. We explain the problem in detail in @encoding.
 
 The intuitive solution to this problem is to search through all possible assignments' discretized matrices, through exhaustive or local search. This approach is not ideal for two reasons.
-1. Exhaustive Search has an exponential time complexity, which makes it unusable for bigger matrices (especially the ones features in the original problem description @originalProblem).
+1. Exhaustive Search has an exponential time complexity, which makes it unusable for bigger matrices (especially the ones featured in the original problem description @originalProblem).
 2. Local Search cannot identify invalid inputs.
 We cannot eliminate the need for search entirely (see @exhaustive). Still, we can view the problem in a different light.
 - The results that we are searching for share a common property, which we call the "chunk property". The chunk property can be exploited to simultaneously identify the values of cells belonging to large groups (see @chunk).
@@ -369,7 +369,7 @@ We know that we are recreating images of two-dimensional bodies. The term "body"
 
 From the chunk property follows that many sub-arrays (verticals, horizontals or diagonals) of the matrix are completely filled with `EMPTY`-values. Such sub-arrays represent the area in which the object *is not* located, like the edges of the matrix. The respective depth for such a sub-array must then be zero. Thus, from finding a value of zero in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `EMPTY`-valued.
 
-The cunk property makes no statement about sub-arrays being completely filled with `FULL`-values. Picture an object located in the center of a matrix and surrounded with empty cells. None of the sub-arrays of this matrix is completely `FULL`-valued. However, if we only consider the unassigned cells of a sub-array - let us call the collection of those cells the *assignee* of the sub-array - we get a different picture. The previous paragraph implies that `EMPTY`-valued cells are quickly being identified. What remains in the assignee are the `FULL`-valued cells only.
+The chunk property makes no statement about sub-arrays being completely filled with `FULL`-values. Consider an object located in the center of a matrix and surrounded with empty cells. None of the sub-arrays of this matrix is completely `FULL`-valued. However, if we only consider the unassigned cells of a sub-array - let us call the collection of those cells the *assignee* of the sub-array - we get a different picture. The previous paragraph implies that `EMPTY`-valued cells are quickly being identified. What remains in the assignee are the `FULL`-valued cells only.
 
 So we can conclude: From the chunk property follows that, in advanced iterations, many assignees are completely filled with `FULL`-values. Such assignees represent the area in which the object *is* located. The respective depth of the object for this assignee must then be equal to the number of unassigned cells. Thus, from finding a value of maximal depth in the input, we can deduct that, in the corresponding sub-array, all unassigned cells must be `FULL`-valued. 
 
@@ -583,7 +583,7 @@ Our experiment shows that the timeout-rate $t$ does not exceed $t = 1.5 %$. The 
 
 = Achievements and Future work <future>
 
-We were able to show that the scanner-problem does not rely on heavy search for almost all inputs. By exploiting the chunk property, which all inputs possess, the search space is being reduced dramatically. Still, around $2 %$ of inputs require substantial time for searching.
+We identified the chunk property in the inputs of the scanner problem. We were able to show that the search space for $98 %$ of inputs can be reduced dramatically by exploiting this property. Especially the inputs featured in the original problem description do not rely on any search at all. This may justify the provocative title of this paper. 
 
 The search algorithm we used is a simple exhaustive search. We put all work into reducing the search space such that exhaustive search has to be used as few times as possible. To further improve the performance for every possible input, future work may focus on finding more efficient search algorithms. One possibility that has been tried during our research is simulated annealing, a local search algorithm which is guaranteed to find the global optimum, given enough time. However, a thorough implementation was beyond the scope of this research project.
 
